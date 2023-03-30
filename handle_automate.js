@@ -4,6 +4,7 @@ const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
+const { emitEvent } = require("./utils/socket");
 const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
@@ -35,7 +36,8 @@ const handleChooseLocation = async (
       xpath: selectPath,
     });
     await driver.wait(condition_select, maxTime).then(async (e) => {
-      await driver.findElement(By.xpath(selectPath)).click();
+      const select = await driver.findElement(By.xpath(selectPath));
+      await driver.executeScript("arguments[0].click();", select);
       // wait for clear input search
       clearInput(driver, inputSearchPath);
       driver.sleep(1000);
@@ -56,7 +58,8 @@ const handleChooseLanguage = async (driver, inputArr, inactivatePath) => {
       xpath: selectPath,
     });
     await driver.wait(condition_select, maxTime).then(async (e) => {
-      await driver.findElement(By.xpath(selectPath)).click();
+      const select = await driver.findElement(By.xpath(selectPath));
+      await driver.executeScript("arguments[0].click();", select);
       // wait for clear input search
       driver.sleep(1000);
     });
@@ -72,7 +75,8 @@ const handleVideos = async (driver, inputArr) => {
   const iconSearchVideoPath = "(//i[@class='vi-icon2-search'])[1]";
   const firstVideoPath = "(//div[@class='slip-content_loadingMask_idBtk'])[1]";
 
-  await driver.findElement(By.xpath(buttonImportPath)).click();
+  const buttonImport = await driver.findElement(By.xpath(buttonImportPath));
+  await driver.executeScript("arguments[0].click();", buttonImport);
   driver.sleep(1000);
   // wait for loading data to be active
   const condition_select = until.elementLocated({
@@ -83,9 +87,9 @@ const handleVideos = async (driver, inputArr) => {
 
     for (const [index, data] of inputArr.entries()) {
       await driver.findElement(By.xpath(inputSearchVideoPath)).sendKeys(data);
+      const searchBtt = await driver.findElement(By.xpath(iconSearchVideoPath));
       await driver
-        .findElement(By.xpath(iconSearchVideoPath))
-        .click()
+        .executeScript("arguments[0].click();", searchBtt)
         .then(async () => {
           // handle wait for loading video
           const condition_video = until.elementLocated({
@@ -132,11 +136,18 @@ const handleWaitToTargeting = async (driver, data) => {
     // Find the element that causes the hidden element to appear
     const triggerElement = await driver.findElement(By.xpath(xpathCheck));
     // handle select app
-    // const selectAppPath = "//input[@placeholder='Select app']"
-    // const condition_select_app = until.elementLocated({
-    //   xpath: selectAppPath,
-    // });
+    const selectAppPath = "//input[@placeholder='Select app']";
+    const condition_select_app = until.elementLocated({
+      xpath: selectAppPath,
+    });
     // await driver.wait(condition_select_app, maxTime).then(async (e) => {
+    //   await driver.findElement(By.xpath(selectAppPath)).click();
+    //   const selectApp = "//div[normalize-space()='" + data.app_name + "']";
+    //   const findApp = await driver.findElement(By.xpath(selectApp));
+    //   const blurPath =
+    //     "//span[normalize-space()='Where would you like to show your ads?']";
+    //   await driver.executeScript("arguments[0].click();", findApp);
+    //   await driver.findElement(By.xpath(blurPath)).click();
     // });
     // Move the mouse over the trigger element to make the hidden element visible
     driver
@@ -155,7 +166,13 @@ const handleWaitToTargeting = async (driver, data) => {
             maxTime
           )
           .then(async function () {
-            await driver.findElement(By.xpath(hiddenElementXpath)).click();
+            const findHiddenElement = await driver.findElement(
+              By.xpath(hiddenElementXpath)
+            );
+            await driver.executeScript(
+              "arguments[0].click();",
+              findHiddenElement
+            );
             const inputPath =
               "//div[@class='vi-select-tree index_locationFormItem_dP0yb']//div//div[@class='vi-select-tree-inside-container']";
             const findInputEl = await driver.findElement(By.xpath(inputPath));
@@ -172,8 +189,7 @@ const handleWaitToTargeting = async (driver, data) => {
                 });
                 await driver.wait(condition_close, maxTime).then(async (e) => {
                   await driver.findElement(By.xpath(x_close_path)).click();
-                  // driver.executeScript("arguments[0].click();", xpathCheck);
-                  findInputEl.click();
+                  driver.executeScript("arguments[0].click();", findInputEl);
 
                   // wait for input search
                   const inputSearchPath = "//input[@placeholder='Search']";
@@ -262,9 +278,13 @@ const handleWaitToTargeting = async (driver, data) => {
                         // inactivate input end date
                         const inactivateSelectPath =
                           "//span[@class='budget-schedule-title']";
-                        await driver
-                          .findElement(By.xpath(inactivateSelectPath))
-                          .click();
+                        const inaac = await driver.findElement(
+                          By.xpath(inactivateSelectPath)
+                        );
+                        await driver.executeScript(
+                          "arguments[0].click();",
+                          inaac
+                        );
                         // handle select video
                         await handleVideos(driver, data.videos);
                         // scroll to end page
@@ -301,7 +321,7 @@ const waitSwitchStatus = async (driver, data) => {
     xpath: xpath,
   });
   const maxTime = 30000;
-  await driver.wait(condition, maxTime).then(async function () {
+  driver.wait(condition, maxTime).then(async function () {
     await driver
       .findElement(
         By.xpath(
@@ -309,7 +329,6 @@ const waitSwitchStatus = async (driver, data) => {
         )
       )
       .click();
-
     clearInput(driver, "//input[@type='text']");
     await driver
       .findElement(By.xpath("//input[@type='text']"))
@@ -331,8 +350,10 @@ const clearInput = async (driver, xpath) => {
 };
 const runTest = catchAsync(async (req, res, next) => {
   const data = req.data;
+  const { id, userId } = req.body;
   let options = new firefox.Options();
   options.setProfile(profile);
+  let checked = false;
 
   //To wait for browser to build and launch properly
   let driver = await new webdriver.Builder()
@@ -353,17 +374,41 @@ const runTest = catchAsync(async (req, res, next) => {
         .click();
 
       await waitSwitchStatus(driver, data);
+      checked = true;
+    });
+  } catch (err) {
+    console.log("SOME THING WENT WRONG: ", err);
+    await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
+      status: "canceled",
+    });
+    console.log("RUN TEST FAILED");
+    emitEvent("message", {
+      message: "Run test failed",
+      type: "success",
+      userId,
     });
   } finally {
-    const startOverPath =
-      "//button[@data-tea-click='draft_confirmation_start_over']";
-    const findButton = await driver.findElement(By.xpath(startOverPath));
-    const isVisibleButton = until.elementIsVisible(findButton);
-    if (isVisibleButton) {
-      await driver.findElement(By.xpath(startOverPath)).click();
-      await driver.quit();
-      runTest(req, res, next);
-    } else await driver.quit();
+    // const startOverPath =
+    //   "//button[@data-tea-click='draft_confirmation_start_over']";
+    // const findButton = await driver.findElement(By.xpath(startOverPath));
+    // const isVisibleButton = until.elementIsVisible(findButton);
+    // if (isVisibleButton) {
+    //   await driver.findElement(By.xpath(startOverPath)).click();
+    //   runTest(req, res, next);
+    // }
+    // await driver.quit();
+    if (checked) {
+      // handle success status
+      await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
+        status: "completed",
+      });
+      console.log("RUN TEST SUCCESS");
+      emitEvent("message", {
+        message: "Run test success",
+        type: "success",
+        userId,
+      });
+    }
   }
 });
 
@@ -379,8 +424,8 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
       .slice(0, 10);
     const campaign_data = {
       campaign_url: origin_data.campaign_url,
-      campaign_name: origin_data.product,
-      app_name: origin_data.networks[0],
+      campaign_name: origin_data.campaign_name,
+      app_name: origin_data.product,
       locations: origin_data.locations,
       languages: origin_data.languages,
       budget: origin_data.budget,
@@ -394,7 +439,6 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
     req.data = campaign_data;
     if (origin_data.status === "pending" || origin_data.status === "canceled")
       runTest(req, res, next);
-    else console.log("NOT RUN TEST");
   } else throw new ApiError(400, "BAD REQUEST");
 });
 // handleFetchApi("641bd665a3a4a9f7f4cf4ee6");

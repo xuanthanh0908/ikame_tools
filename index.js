@@ -4,10 +4,14 @@ const helmet = require("helmet");
 const express = require("express");
 const { handleFetchApi } = require("./handle_automate");
 const cors = require("cors");
+const socketIo = require("socket.io");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { errorConverter, errorHandler } = require("./utils/error");
+const { socketHandler } = require("./socket");
+const Server = socketIo.Server;
 const app = express();
+let server;
 const PORT = 9002;
 // enable cors
 app.use(
@@ -35,7 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const createCampaign = catchAsync(async (req, res, next) => {
   await handleFetchApi(req, res, next);
-  return res.json(" OK ");
+  res.status(200).send({ message: "success" });
 });
 
 app.post("/tool/tiktok", createCampaign);
@@ -51,8 +55,48 @@ app.use(errorConverter);
 // handle error
 app.use(errorHandler);
 
-// start the server
+// init socket
 server = http.createServer({}, app);
-server.listen(PORT, () => {
-  console.info(`--- Server Started --- http://localhost:${PORT}`);
+let io = new Server(server, {
+  pingTimeOut: 3 * 60 * 1000,
+  autoConnect: true,
+  cors: {
+    origin: "*",
+  },
+});
+const namespaceSocket = io.of("/");
+socketHandler(namespaceSocket)
+  .then((handler) => {
+    io.on("connection", handler);
+    server.listen(PORT, () => {
+      console.info(`--- Server Started --- http://localhost:${PORT}`);
+    });
+  })
+  .catch((error) => console.log(error));
+// start the server
+
+const exitHandler = () => {
+  if (server) {
+    server.close(() => {
+      console.log("Server closed");
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+};
+
+const unexpectedErrorHandler = (error) => {
+  console.log(error);
+  // exitHandler();
+};
+
+process.on("unhandledRejection", unexpectedErrorHandler);
+process.on("uncaughtException", unexpectedErrorHandler);
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received");
+  // if (server) {
+  //   server.close();
+  // }
 });

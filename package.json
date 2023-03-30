@@ -18,7 +18,9 @@
     "http-status": "^1.6.2",
     "jwt-decode": "^3.1.2",
     "node-cron": "^3.0.2",
-    "selenium-webdriver": "^4.8.2"
+    "selenium-webdriver": "^4.8.2",
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
