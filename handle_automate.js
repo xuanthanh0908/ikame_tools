@@ -1,14 +1,18 @@
 const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
 const axios = require("axios");
+const events = require("events");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { emitEvent } = require("./utils/socket");
+const readline = require("readline");
+const fs = require("fs");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
 };
+
 // const profile =
 //   "C:\\Users\\hd131\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\9azfairu.default-release";
 
@@ -84,12 +88,11 @@ const handleVideos = async (driver, inputArr) => {
   });
   await driver.wait(condition_select, maxTime).then(async (e) => {
     // scroll to button import
-
     for (const [index, data] of inputArr.entries()) {
       await driver.findElement(By.xpath(inputSearchVideoPath)).sendKeys(data);
-      const searchBtt = await driver.findElement(By.xpath(iconSearchVideoPath));
       await driver
-        .executeScript("arguments[0].click();", searchBtt)
+        .findElement(By.xpath(iconSearchVideoPath))
+        .click()
         .then(async () => {
           // handle wait for loading video
           const condition_video = until.elementLocated({
@@ -99,7 +102,7 @@ const handleVideos = async (driver, inputArr) => {
             const element = await driver.findElement(By.xpath(firstVideoPath));
             await driver.executeScript("arguments[0].click();", element);
             clearInput(driver, inputSearchVideoPath);
-            driver.sleep(1000);
+            driver.sleep(3000);
           });
         });
     }
@@ -349,68 +352,85 @@ const clearInput = async (driver, xpath) => {
   await driver.findElement(By.xpath(xpath)).sendKeys(Key.DELETE);
 };
 const runTest = catchAsync(async (req, res, next) => {
-  const data = req.data;
-  // console.log("data", data);
-  const { id, userId } = req.body;
-  let options = new firefox.Options();
-  options.setProfile(data.profile);
-  let checked = false;
+  let profile = [];
+  const appDataPath = process.env.APPDATA + "\\Mozilla\\Firefox\\profiles.ini"; // Get the path to the AppData folder
+  const readInterface = readline.createInterface({
+    input: fs.createReadStream(appDataPath),
+    output: process.stdout,
+    console: false,
+  });
+  readInterface.on("line", function (line) {
+    profile.push(line);
+  });
 
-  //To wait for browser to build and launch properly
-  let driver = await new webdriver.Builder()
-    .forBrowser("firefox")
-    .setFirefoxOptions(options)
-    .build();
-  try {
-    await driver.get(data.campaign_url);
-    await driver.sleep(1000);
-    let maxTime = 30000;
-    var xpath = "//div[normalize-space()='App promotion']";
-    var condition = until.elementLocated({
-      xpath: xpath,
-    });
-    await driver.wait(condition, maxTime).then(async function () {
-      await driver
-        .findElement(By.xpath("//div[normalize-space()='App promotion']"))
-        .click();
+  /// wait for readInterface to close
+  events.once(readInterface, "close").then(async (e) => {
+    const profilePath =
+      process.env.APPDATA + "\\Mozilla\\Firefox\\" + profile[1].split("=")[1];
+    const data = req.data;
+    // console.log("data", data);
+    const { id, userId } = req.body;
+    let options = new firefox.Options();
+    options.setProfile(profilePath);
+    let checked = false;
 
-      await waitSwitchStatus(driver, data);
-      checked = true;
-    });
-  } catch (err) {
-    console.log("SOME THING WENT WRONG: ", err);
-    await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
-      status: "canceled",
-    });
-    console.log("RUN TEST FAILED");
-    emitEvent("message", {
-      message: "Run test failed",
-      type: "success",
-      userId,
-    });
-  } finally {
-    // const startOverPath =
-    //   "//button[@data-tea-click='draft_confirmation_start_over']";
-    // const findButton = await driver.findElement(By.xpath(startOverPath));
-    // const isVisibleButton = until.elementIsVisible(findButton);
-    // if (isVisibleButton) {
-    //   await driver.findElement(By.xpath(startOverPath)).click();
-    //   runTest(req, res, next);
-    // }
-    // await driver.quit();
-    if (checked) {
-      // handle success status
-      await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
-        status: "completed",
+    //To wait for browser to build and launch properly
+    let driver = await new webdriver.Builder()
+      .forBrowser("firefox")
+      .setFirefoxOptions(options)
+      .build();
+    try {
+      await driver.get(data.campaign_url);
+      await driver.sleep(1000);
+      let maxTime = 30000;
+      var xpath = "//div[normalize-space()='App promotion']";
+      var condition = until.elementLocated({
+        xpath: xpath,
       });
-      console.log("RUN TEST SUCCESS");
+      await driver.wait(condition, maxTime).then(async function () {
+        await driver
+          .findElement(By.xpath("//div[normalize-space()='App promotion']"))
+          .click();
+
+        await waitSwitchStatus(driver, data);
+        checked = true;
+      });
+    } catch (err) {
+      console.log("SOME THING WENT WRONG: ", err);
+      await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
+        status: "canceled",
+      });
+      console.log("RUN TEST FAILED");
       emitEvent("message", {
-        message: "Run test success",
+        message: "Run test failed",
         type: "success",
         userId,
       });
+    } finally {
+      const startOverPath =
+        "//button[@data-tea-click='draft_confirmation_start_over']";
+      const findButton = await driver
+        .findElement(By.xpath(startOverPath))
+        .isDisplayed();
+      if (findButton) {
+        await driver.findElement(By.xpath(startOverPath)).click();
+        runTest(req, res, next);
+        await driver.quit();
+      }
+      if (checked) {
+        // handle success status
+        await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
+          status: "completed",
+        });
+        console.log("RUN TEST SUCCESS");
+        emitEvent("message", {
+          message: "Run test success",
+          type: "success",
+          userId,
+        });
+      }
     }
-  }
+  });
 });
 
 const handleFetchApi = catchAsync(async (req, res, next) => {
