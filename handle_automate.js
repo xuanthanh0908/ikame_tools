@@ -5,7 +5,7 @@ const webdriver = require("selenium-webdriver");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { emitEvent } = require("./utils/socket");
-const backend_campaign_url = "http://localhost:9000/api/v1";
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
 };
