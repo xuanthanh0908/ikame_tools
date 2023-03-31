@@ -9,8 +9,8 @@ const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
 };
-const profile =
-  "C:\\Users\\hd131\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\9azfairu.default-release";
+// const profile =
+//   "C:\\Users\\hd131\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\9azfairu.default-release";
 
 // wait for driver hover hidden parent element
 const mouseHoverElement = (el, driver) => {
@@ -350,9 +350,10 @@ const clearInput = async (driver, xpath) => {
 };
 const runTest = catchAsync(async (req, res, next) => {
   const data = req.data;
+  // console.log("data", data);
   const { id, userId } = req.body;
   let options = new firefox.Options();
-  options.setProfile(profile);
+  options.setProfile(data.profile);
   let checked = false;
 
   //To wait for browser to build and launch properly
@@ -419,6 +420,7 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
   );
   if (response.status === 200) {
     const origin_data = response.data.data;
+    // console.log("origin_data", origin_data);
     const formattedDate = new Date(origin_data.start_date)
       .toISOString()
       .slice(0, 10);
@@ -435,6 +437,7 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
       },
       videos: origin_data.videos,
       texts: origin_data.texts.flat(1),
+      profile: origin_data.profile,
     };
     req.data = campaign_data;
     if (origin_data.status === "pending" || origin_data.status === "canceled")
