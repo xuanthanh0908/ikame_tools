@@ -3,9 +3,9 @@ const axios = require('axios')
 const events = require('events')
 const firefox = require('selenium-webdriver/firefox')
 const webdriver = require('selenium-webdriver')
-const ApiError = require('./utils/apiError')
-const catchAsync = require('./utils/catchAsync')
-const { emitEvent } = require('./utils/socket')
+const ApiError = require('../utils/apiError')
+const catchAsync = require('../utils/catchAsync')
+const { emitEvent } = require('../utils/socket')
 const readline = require('readline')
 const fs = require('fs')
 const backend_campaign_url = 'https://api.ikamegroup.com/api/v1'
@@ -112,7 +112,7 @@ const handleVideos = async (driver, inputArr) => {
     "//button[@data-testid='creative_detail_libraryConfirm']//span[contains(text(),'Confirm')]"
   await driver.findElement(By.xpath(confirmButtonPath)).click()
 }
-const handleAddText = async (driver, inputArr) => {
+const handleAddText = async (driver, inputArr, checked) => {
   const addButtonPath =
     "//button[@class='vi-button vi-byted-button vi-button--default']//span//span[contains(text(),'Add')]"
   for (const [index, data] of inputArr.entries()) {
@@ -124,6 +124,7 @@ const handleAddText = async (driver, inputArr) => {
     await driver.executeScript('arguments[0].click();', findAddButton)
     driver.sleep(1000)
   }
+  checked = true
 }
 // wait for targeting to be active
 const handleWaitToTargeting = async (driver, data) => {
@@ -137,19 +138,39 @@ const handleWaitToTargeting = async (driver, data) => {
     // Find the element that causes the hidden element to appear
     const triggerElement = await driver.findElement(By.xpath(xpathCheck))
     // handle select app
-    const selectAppPath = "//input[@placeholder='Select app']"
-    const condition_select_app = until.elementLocated({
-      xpath: selectAppPath,
-    })
+    // const selectAppPath = "//input[@placeholder='Select app']"
+    // const condition_select_app = until.elementLocated({
+    //   xpath: selectAppPath,
+    // })
     // await driver.wait(condition_select_app, maxTime).then(async (e) => {
-    //   await driver.findElement(By.xpath(selectAppPath)).click();
-    //   const selectApp = "//div[normalize-space()='" + data.app_name + "']";
-    //   const findApp = await driver.findElement(By.xpath(selectApp));
-    //   const blurPath =
-    //     "//span[normalize-space()='Where would you like to show your ads?']";
-    //   await driver.executeScript("arguments[0].click();", findApp);
-    //   await driver.findElement(By.xpath(blurPath)).click();
-    // });
+    //   await driver.findElement(By.xpath(selectAppPath)).click()
+
+    //   const app_name_paths = "//div[@class='item-text item-name']"
+    //   const condition_ = until.elementLocated({
+    //     xpath: app_name_paths,
+    //   })
+    //   await driver.wait(condition_, maxTime).then(async (e) => {
+    //     const element = await driver.findElement(By.xpath(app_name_paths))
+    //     const name_app = 'Cast for Chromecast & TV Cast'
+    //     if (element.length > 0) {
+    //       for (const el of element.entries()) {
+    //         const text = await el.getText()
+    //         if (text === name_app) {
+    //           el.click()
+    //         }
+    //       }
+    //     } else {
+    //       const text = await element.getText()
+    //       if (text === name_app) {
+    //         element.click()
+    //       }
+    //     }
+    //     const blurPath =
+    //       "//span[normalize-space()='Where would you like to show your ads?']"
+    //     await driver.executeScript('arguments[0].click();', findApp)
+    //     await driver.findElement(By.xpath(blurPath)).click()
+    //   })
+    // })
     // Move the mouse over the trigger element to make the hidden element visible
     driver
       .actions()
@@ -291,7 +312,7 @@ const handleWaitToTargeting = async (driver, data) => {
                     .executeScript('arguments[0].scrollIntoView(true)', el)
                     .then(async function () {
                       // handle add text
-                      await handleAddText(driver, data.texts)
+                      await handleAddText(driver, data.texts, checked)
                     })
                   // })
                 })
@@ -302,7 +323,7 @@ const handleWaitToTargeting = async (driver, data) => {
 }
 
 // wait for switch status to be active
-const waitSwitchStatus = async (driver, data) => {
+const waitSwitchStatus = async (driver, data, checked) => {
   // await driver until.elementLocated find element success
   const xpath =
     "//div[@data-tea='create_campaign_spc_status']//div[@role='switch']"
@@ -328,7 +349,7 @@ const waitSwitchStatus = async (driver, data) => {
       .findElement(By.xpath("//button[@data-testid='common_next_button']"))
       .click()
     await driver.sleep(5000).then(async function () {
-      await handleWaitToTargeting(driver, data)
+      await handleWaitToTargeting(driver, data, checked)
     })
   })
 }
@@ -378,9 +399,8 @@ const runTest = catchAsync(async (req, res, next) => {
           .findElement(By.xpath("//div[normalize-space()='App promotion']"))
           .click()
 
-        await waitSwitchStatus(driver, data)
+        await waitSwitchStatus(driver, data, checked)
       })
-      checked = true
     } finally {
       const startOverPath =
         "//button[@data-tea-click='draft_confirmation_start_over']"
