@@ -9,8 +9,10 @@ const { emitEvent } = require("../utils/socket");
 const readline = require("readline");
 const fs = require("fs");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9001/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
+  CAMPAIGN_UPDATE: "/campaign/update-by-one",
 };
 
 // const profile =
@@ -112,7 +114,7 @@ const handleVideos = async (driver, inputArr) => {
     "//button[@data-testid='creative_detail_libraryConfirm']//span[contains(text(),'Confirm')]";
   await driver.findElement(By.xpath(confirmButtonPath)).click();
 };
-const handleAddText = async (driver, inputArr, checked) => {
+const handleAddText = async (driver, inputArr) => {
   const addButtonPath =
     "//button[@class='vi-button vi-byted-button vi-button--default']//span//span[contains(text(),'Add')]";
   for (const [index, data] of inputArr.entries()) {
@@ -126,7 +128,6 @@ const handleAddText = async (driver, inputArr, checked) => {
     await driver.executeScript("arguments[0].click();", findAddButton);
     driver.sleep(1000);
   }
-  checked = true;
 };
 // wait for targeting to be active
 const handleWaitToTargeting = async (driver, data) => {
@@ -314,7 +315,7 @@ const handleWaitToTargeting = async (driver, data) => {
                     .executeScript("arguments[0].scrollIntoView(true)", el)
                     .then(async function () {
                       // handle add text
-                      await handleAddText(driver, data.texts, checked);
+                      await handleAddText(driver, data.texts);
                     });
                   // })
                 });
@@ -401,7 +402,9 @@ const runTest = catchAsync(async (req, res, next) => {
           .findElement(By.xpath("//div[normalize-space()='App promotion']"))
           .click();
 
-        await waitSwitchStatus(driver, data);
+        await waitSwitchStatus(driver, data).then(async function () {
+          checked = true;
+        });
       });
     } finally {
       const startOverPath =
@@ -416,9 +419,12 @@ const runTest = catchAsync(async (req, res, next) => {
       }
       if (checked) {
         // handle success status
-        await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
-          status: "completed",
-        });
+        await axios.patch(
+          backend_campaign_url + url.CAMPAIGN_UPDATE + "/" + id,
+          {
+            status: "completed",
+          }
+        );
         console.log("RUN TEST SUCCESS");
         emitEvent("message", {
           message: "Run test success",
@@ -427,9 +433,12 @@ const runTest = catchAsync(async (req, res, next) => {
         });
       } else {
         // console.log("SOME THING WENT WRONG: ", err);
-        await axios.patch(backend_campaign_url + url.CAMPAIGN + "/" + id, {
-          status: "canceled",
-        });
+        await axios.patch(
+          backend_campaign_url + url.CAMPAIGN_UPDATE + "/" + id,
+          {
+            status: "canceled",
+          }
+        );
         console.log("RUN TEST FAILED");
         emitEvent("message", {
           message: "Run test failed",
