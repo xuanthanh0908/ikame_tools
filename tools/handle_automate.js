@@ -382,7 +382,7 @@ const runTest = catchAsync(async (req, res, next) => {
     const { id, userId } = req.body;
     let options = new firefox.Options();
     options.setProfile(profilePath);
-    options.setPreference("layout.css.devPixelsPerPx", "0.4");
+    options.setPreference("layout.css.devPixelsPerPx", "0.8");
     let checked = false;
 
     //To wait for browser to build and launch properly
