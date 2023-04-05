@@ -157,8 +157,10 @@ const handleAddText = async (driver, inputArr, userId, id) => {
       const findAddButton = await driver.findElement(By.xpath(addButtonPath));
       // const findText = await driver.findElement(By.xpath(textPath));
       await driver.findElement(By.xpath(textPath)).sendKeys(data);
-      await driver.executeScript("arguments[0].click();", findAddButton);
-      driver.sleep(1000);
+      await driver.sleep(1000);
+      if (index !== inputArr.length - 1) {
+        await driver.executeScript("arguments[0].click();", findAddButton);
+      }
     }
 
     /// handle submit - upload ads
@@ -169,6 +171,7 @@ const handleAddText = async (driver, inputArr, userId, id) => {
       .then(async () => {
         console.log("RUN TEST SUCCESS");
         await updateStatusCampaign(id, "completed", userId, "Run test success");
+        await driver.sleep(10000);
         await driver.quit();
       });
   } catch (error) {
