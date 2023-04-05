@@ -187,7 +187,7 @@ const handleWaitToTargeting = async (driver, data, userId, id) => {
         });
         await driver.wait(condition_, maxTime).then(async (e) => {
           const element = await driver.findElement(By.xpath(app_name_paths));
-          const name_app = "Cast for Chromecast & TV Cast";
+          const name_app = data.product;
           if (element.length > 0) {
             for (const el of element.entries()) {
               const text = await el.getText();
