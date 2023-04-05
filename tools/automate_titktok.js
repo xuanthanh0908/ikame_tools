@@ -535,6 +535,7 @@ const runTest = catchAsync(async (req, res, next) => {
       .forBrowser("firefox")
       .setFirefoxOptions(options)
       .build();
+    driver.manage().window().maximize();
     try {
       await driver.get(data.campaign_url);
       await driver.sleep(1000);

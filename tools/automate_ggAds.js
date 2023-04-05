@@ -17,8 +17,8 @@ const DATA = {
   type_app: "iOS",
   app_id: "1659186258",
   campaign_name: "Campaign 01",
-  budget: 21,
-  bid: 5,
+  budget: 10,
+  bid: 1,
   headline: ["Test Headline 01", "Test Headline 02", "Test Headline 03"],
 };
 const runTest = () => {
@@ -28,13 +28,16 @@ const runTest = () => {
       const maxTime = 30000;
       //   const { id, userId } = req.body
       let options = new firefox.Options();
+
       options.setProfile(path);
+      options.setPreference("layout.css.devPixelsPerPx", "0.7");
       let checked = false;
       //To wait for browser to build and launch properly
       let driver = await new webdriver.Builder()
         .forBrowser("firefox")
         .setFirefoxOptions(options)
         .build();
+      driver.manage().window().maximize();
       try {
         await driver.get(DATA.campaign_url);
         const app_promote_path =
@@ -114,8 +117,8 @@ const handleStep2 = async (driver) => {
   const max_time = 30000;
   // await driver.sleep(3000);
   const find_are_loading_path =
-    "//div[@aria-label='Location options']//material-ripple[@class='_ngcontent-awn-CM_EDITING-64']";
-  const conditions_01 = until.elementIsVisible({
+    "//div[@aria-label='Location options']//material-ripple[@class='_ngcontent-awn-CM_EDITING-57']";
+  const conditions_01 = until.elementLocated({
     xpath: find_are_loading_path,
   });
   await driver.wait(conditions_01, max_time).then(async () => {
@@ -124,15 +127,21 @@ const handleStep2 = async (driver) => {
     await driver
       .executeScript("arguments[0].click()", click_01)
       .then(async () => {
-        const choose_path_01 = "top-section _ngcontent-awn-CM_EDITING-28";
+        const choose_path_01 =
+          "//div[normalize-space()='Presence: People in or regularly in your targeted locations']";
         await driver
-          .findElement(By.className(choose_path_01))
+          .findElement(By.xpath(choose_path_01))
           .click()
           .then(async () => {
+            // enable language
+            const input_language =
+              "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/reconstruction-base-root[1]/view-loader[1]/universal-campaign-flow-root[1]/base-campaign-flow-root[1]/left-stepper[1]/div[1]/div[1]/div[1]/dynamic-component[1]/layout-driven-view[1]/construction-layout[1]/div[1]/construction-layout-engine[1]/div[1]/div[1]/div[3]/div[3]/lazy-plugin[1]/div[1]/dynamic-component[1]/languages[1]/material-expansionpanel[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/language-picker[1]/section[1]/div[1]/language-selector[1]/div[1]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+            await driver.findElement(By.xpath(input_language)).click();
+
             // choose language
-            const all_el_language_path =
+            const all_language_path =
               "//span[normalize-space()='All languages']";
-            await driver.findElement(By.xpath(all_el_language_path)).click();
+            await driver.findElement(By.xpath(all_language_path)).click();
             // handle next button
             const next_button_path =
               "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
@@ -166,7 +175,7 @@ const handleStep3 = async (driver) => {
       .findElement(By.xpath(next_button_path))
       .click()
       .then(async () => {
-        // await handleStep4(driver);
+        await handleStep4(driver);
       });
   });
 };
