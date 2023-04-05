@@ -160,9 +160,17 @@ const handleAddText = async (driver, inputArr, userId, id) => {
       await driver.executeScript("arguments[0].click();", findAddButton);
       driver.sleep(1000);
     }
-    console.log("RUN TEST SUCCESS");
-    await updateStatusCampaign(id, "completed", userId, "Run test success");
-    await driver.quit();
+
+    /// handle submit - upload ads
+    const submitButtonPath = "//button[@data-testid='common_next_button']";
+    const finshishBtn = await driver.findElement(By.xpath(submitButtonPath));
+    await driver
+      .executeScript("arguments[0].click();", finshishBtn)
+      .then(async () => {
+        console.log("RUN TEST SUCCESS");
+        await updateStatusCampaign(id, "completed", userId, "Run test success");
+        await driver.quit();
+      });
   } catch (error) {
     console.log("error: ", error);
     await updateStatusCampaign(id, "canceled", userId);
