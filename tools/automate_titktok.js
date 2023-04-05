@@ -268,155 +268,178 @@ const handleWaitToTargeting = async (driver, data, userId, id) => {
                               );
 
                               // handle mouse hover language input
-                              // const languageInputPath =
-                              //   "//label[normalize-space()='Languages']"
-                              // const findLanguageInputEl = await driver.findElement(
-                              //   By.xpath(languageInputPath),
-                              // )
-                              // driver
-                              //   .actions()
-                              //   .move({ origin: findLanguageInputEl })
-                              //   .perform()
-                              //   .then(async function () {
-                              // mouseHoverElement(findLanguageInputEl, driver)
-                              // const hiddenElementXpath =
-                              //   '/html[1]/body[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/section[2]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/button[1]/span[1]'
-                              // await driver
-                              //   .wait(
-                              //     until.elementsLocated({
-                              //       xpath: hiddenElementXpath,
-                              //     }),
-                              //     maxTime,
-                              //   )
-                              // .then(async function () {
-                              //   await driver
-                              //     .findElement(By.xpath(hiddenElementXpath))
-                              //     .click()
-                              //   const inputLanguagePath =
-                              //     "//div[@class='vi-select-tree']//div//div[@class='vi-select-tree-inside-container']"
-                              //   await driver
-                              //     .findElement(By.xpath(inputLanguagePath))
-                              //     .click()
-                              // await handleChooseLanguage(
-                              //   driver,
-                              //   data.languages,
-                              //   inactivatePath
-                              // );
-                              // handle change budget input
-                              const budgetInputPath =
-                                "//input[@data-tea='create_adgroup_budget_num']";
-                              clearInput(driver, budgetInputPath);
-                              driver.sleep(1000);
-                              await driver
-                                .findElement(By.xpath(budgetInputPath))
-                                .sendKeys(data.budget);
+                              const languageInputPath =
+                                "//label[normalize-space()='Languages']";
+                              const findLanguageInputEl =
+                                await driver.findElement(
+                                  By.xpath(languageInputPath)
+                                );
+                              driver
+                                .actions()
+                                .move({ origin: findLanguageInputEl })
+                                .perform()
+                                .then(async function () {
+                                  mouseHoverElement(
+                                    findLanguageInputEl,
+                                    driver
+                                  );
+                                  const hiddenElementXpath =
+                                    "/html[1]/body[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/section[2]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/button[1]/span[1]";
+                                  await driver
+                                    .wait(
+                                      until.elementsLocated({
+                                        xpath: hiddenElementXpath,
+                                      }),
+                                      maxTime
+                                    )
+                                    .then(async function () {
+                                      await driver
+                                        .findElement(
+                                          By.xpath(hiddenElementXpath)
+                                        )
+                                        .click();
+                                      const inputLanguagePath =
+                                        "//div[@class='vi-select-tree']//div//div[@class='vi-select-tree-inside-container']";
+                                      await driver
+                                        .findElement(
+                                          By.xpath(inputLanguagePath)
+                                        )
+                                        .click();
+                                      await handleChooseLanguage(
+                                        driver,
+                                        ["English"],
+                                        inactivatePath
+                                      );
+                                      // handle change budget input
+                                      const budgetInputPath =
+                                        "//input[@data-tea='create_adgroup_budget_num']";
+                                      clearInput(driver, budgetInputPath);
+                                      driver.sleep(1000);
+                                      await driver
+                                        .findElement(By.xpath(budgetInputPath))
+                                        .sendKeys(data.budget);
+                                    });
+                                  // handle select start date
+                                  const startDatePath =
+                                    "//input[@placeholder='Start date']";
+                                  const selectDatePath =
+                                    "(//input[@placeholder='Select date'])[1]";
+                                  const selectTimePath =
+                                    "(//input[@placeholder='Select time'])[1]";
+                                  const end_time_path =
+                                    "//input[@placeholder='End time']";
+
+                                  const selectEndDatePath =
+                                    "(//input[@placeholder='Select date'])[2]";
+                                  const selectEndTimePath =
+                                    "(//input[@placeholder='Select time'])[2]";
+                                  // select endate
+                                  const choose_range_date_path =
+                                    "//span[normalize-space()='Run ad group within a date range']";
+                                  const el_choose_range =
+                                    await driver.findElement(
+                                      By.xpath(choose_range_date_path)
+                                    );
+                                  await driver
+                                    .executeScript(
+                                      "arguments[0].click()",
+                                      el_choose_range
+                                    )
+                                    .then(async () => {
+                                      // enable input start date
+                                      await driver
+                                        .findElement(By.xpath(startDatePath))
+                                        .click();
+                                      await driver.sleep(1000);
+                                      // clear select date input
+                                      clearInput(driver, selectDatePath);
+                                      await driver
+                                        .findElement(By.xpath(selectDatePath))
+                                        .sendKeys(data.startDate.date);
+                                      driver.sleep(1000);
+                                      // clear select time input
+                                      clearInput(driver, selectTimePath);
+                                      await driver
+                                        .findElement(By.xpath(selectTimePath))
+                                        .sendKeys(data.startDate.time);
+                                      // console.log("====start-date", data.startDate.date);
+                                      const split_date =
+                                        data.startDate.date.split("-");
+                                      const EndData_PlusThree =
+                                        split_date[0] +
+                                        "-" +
+                                        split_date[1] +
+                                        "-" +
+                                        (parseInt(split_date[2]) + 3);
+
+                                      // enable input end date
+                                      await driver
+                                        .findElement(By.xpath(end_time_path))
+                                        .click();
+                                      driver.sleep(1000);
+                                      // clear select date input
+                                      clearInput(driver, selectEndDatePath);
+                                      await driver
+                                        .findElement(
+                                          By.xpath(selectEndDatePath)
+                                        )
+                                        .sendKeys(EndData_PlusThree);
+                                      driver.sleep(1000);
+                                      // clear select time input
+                                      clearInput(driver, selectEndTimePath);
+                                      await driver
+                                        .findElement(
+                                          By.xpath(selectEndTimePath)
+                                        )
+                                        .sendKeys(data.startDate.time);
+                                      // await driver
+                                      //   .findElement(By.xpath(end_time_path))
+                                      //   .click();
+
+                                      // inactivate input end date
+                                      const inactivateSelectPath =
+                                        "//span[@class='budget-schedule-title']";
+                                      const inaac = await driver.findElement(
+                                        By.xpath(inactivateSelectPath)
+                                      );
+                                      await driver.executeScript(
+                                        "arguments[0].click();",
+                                        inaac
+                                      );
+                                    });
+                                  // handle select video
+                                  await handleVideos(
+                                    driver,
+                                    data.videos,
+                                    userId,
+                                    id
+                                  );
+                                  // scroll to end page
+                                  // find the <body> element
+
+                                  const buttonElPath =
+                                    "//div[@class='index_title_gRuIn']//span[contains(text(),'Tracking')]";
+                                  const el = driver.findElement(
+                                    By.xpath(buttonElPath)
+                                  );
+                                  // scroll to the bottom of the page
+                                  driver
+                                    .executeScript(
+                                      "arguments[0].scrollIntoView(true)",
+                                      el
+                                    )
+                                    .then(async function () {
+                                      // handle add text
+                                      await handleAddText(
+                                        driver,
+                                        data.texts,
+                                        userId,
+                                        id
+                                      );
+                                    });
+                                  // })
+                                });
                             });
-                          // handle select start date
-                          const startDatePath =
-                            "//input[@placeholder='Start date']";
-                          const selectDatePath =
-                            "(//input[@placeholder='Select date'])[1]";
-                          const selectTimePath =
-                            "(//input[@placeholder='Select time'])[1]";
-                          const end_time_path =
-                            "//input[@placeholder='End time']";
-
-                          const selectEndDatePath =
-                            "(//input[@placeholder='Select date'])[2]";
-                          const selectEndTimePath =
-                            "(//input[@placeholder='Select time'])[2]";
-                          // select endate
-                          const choose_range_date_path =
-                            "//span[normalize-space()='Run ad group within a date range']";
-                          const el_choose_range = await driver.findElement(
-                            By.xpath(choose_range_date_path)
-                          );
-                          await driver
-                            .executeScript(
-                              "arguments[0].click()",
-                              el_choose_range
-                            )
-                            .then(async () => {
-                              // enable input start date
-                              await driver
-                                .findElement(By.xpath(startDatePath))
-                                .click();
-                              await driver.sleep(1000);
-                              // clear select date input
-                              clearInput(driver, selectDatePath);
-                              await driver
-                                .findElement(By.xpath(selectDatePath))
-                                .sendKeys(data.startDate.date);
-                              driver.sleep(1000);
-                              // clear select time input
-                              clearInput(driver, selectTimePath);
-                              await driver
-                                .findElement(By.xpath(selectTimePath))
-                                .sendKeys(data.startDate.time);
-                              // console.log("====start-date", data.startDate.date);
-                              const split_date = data.startDate.date.split("-");
-                              const EndData_PlusThree =
-                                split_date[0] +
-                                "-" +
-                                split_date[1] +
-                                "-" +
-                                (parseInt(split_date[2]) + 3);
-
-                              // enable input end date
-                              await driver
-                                .findElement(By.xpath(end_time_path))
-                                .click();
-                              driver.sleep(1000);
-                              // clear select date input
-                              clearInput(driver, selectEndDatePath);
-                              await driver
-                                .findElement(By.xpath(selectEndDatePath))
-                                .sendKeys(EndData_PlusThree);
-                              driver.sleep(1000);
-                              // clear select time input
-                              clearInput(driver, selectEndTimePath);
-                              await driver
-                                .findElement(By.xpath(selectEndTimePath))
-                                .sendKeys(data.startDate.time);
-                              // await driver
-                              //   .findElement(By.xpath(end_time_path))
-                              //   .click();
-
-                              // inactivate input end date
-                              const inactivateSelectPath =
-                                "//span[@class='budget-schedule-title']";
-                              const inaac = await driver.findElement(
-                                By.xpath(inactivateSelectPath)
-                              );
-                              await driver.executeScript(
-                                "arguments[0].click();",
-                                inaac
-                              );
-                            });
-                          // handle select video
-                          await handleVideos(driver, data.videos, userId, id);
-                          // scroll to end page
-                          // find the <body> element
-
-                          const buttonElPath =
-                            "//div[@class='index_title_gRuIn']//span[contains(text(),'Tracking')]";
-                          const el = driver.findElement(By.xpath(buttonElPath));
-                          // scroll to the bottom of the page
-                          driver
-                            .executeScript(
-                              "arguments[0].scrollIntoView(true)",
-                              el
-                            )
-                            .then(async function () {
-                              // handle add text
-                              await handleAddText(
-                                driver,
-                                data.texts,
-                                userId,
-                                id
-                              );
-                            });
-                          // })
                         });
                     });
                 });
