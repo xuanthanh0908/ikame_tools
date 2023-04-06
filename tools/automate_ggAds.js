@@ -17,9 +17,17 @@ const DATA = {
   type_app: "iOS",
   app_id: "1659186258",
   campaign_name: "Campaign 01",
-  budget: 10,
-  bid: 1,
+  location_type: "Enter another location",
+  location_target: ["target", "exclude"],
+  locations: ["United States", "California, United States"],
+  budget: 5,
+  bid: 0.01,
   headline: ["Test Headline 01", "Test Headline 02", "Test Headline 03"],
+  desc: ["Test Desc 01", "Test Desc 02", "Test Desc 03"],
+  videos: [
+    "https://www.youtube.com/watch?v=W3ykypuEbnU",
+    "https://www.youtube.com/watch?v=IB5rA1QlGnY",
+  ],
 };
 const runTest = () => {
   readFile()
@@ -31,7 +39,6 @@ const runTest = () => {
 
       options.setProfile(path);
       options.setPreference("layout.css.devPixelsPerPx", "0.7");
-      let checked = false;
       //To wait for browser to build and launch properly
       let driver = await new webdriver.Builder()
         .forBrowser("firefox")
@@ -97,7 +104,24 @@ const runTest = () => {
                     await driver
                       .executeScript("arguments[0].click()", button)
                       .then(async () => {
-                        await handleStep2(driver);
+                        await driver.sleep(3000);
+                        const start_new_campaign_path =
+                          "//material-button[@class='new-button _nghost-awn-CM_EDITING-13 _ngcontent-awn-CM_EDITING-34']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                        const findButton = await driver
+                          .findElement(By.xpath(start_new_campaign_path))
+                          .isDisplayed();
+                        if (findButton) {
+                          const button = await driver.findElement(
+                            By.xpath(start_new_campaign_path)
+                          );
+                          await driver
+                            .executeScript("arguments[0].click()", button)
+                            .then(async () => {
+                              await handleStep2(driver);
+                            });
+                        } else {
+                          await handleStep2(driver);
+                        }
                       });
                   });
                 });
@@ -117,13 +141,56 @@ const handleStep2 = async (driver) => {
   const max_time = 30000;
   // await driver.sleep(3000);
   const find_are_loading_path =
-    "//div[@aria-label='Location options']//material-ripple[@class='_ngcontent-awn-CM_EDITING-57']";
+    "//div[contains(text(),'Enter another location')]";
   const conditions_01 = until.elementLocated({
     xpath: find_are_loading_path,
   });
   await driver.wait(conditions_01, max_time).then(async () => {
     // dropdown location options
-    const click_01 = await driver.findElement(By.xpath(find_are_loading_path));
+    const location_input_path =
+      "//div[contains(text(),'Enter another location')]";
+    const input_el = await driver.findElement(By.xpath(location_input_path));
+    await driver.executeScript("arguments[0].click()", input_el);
+    // await driver.sleep(2000);
+    // console.log("====================================", DATA.locations);
+    for (const [index, loca] of DATA.locations.entries()) {
+      console.log("============AO===========", loca);
+      //div[@class='entry _ngcontent-awn-CM_EDITING-171 active']
+      const input_path_01 =
+        "//material-input[@role='combobox']//input[@type='text']";
+      const conditions_02 = until.elementLocated({
+        xpath: input_path_01,
+      });
+      await driver.wait(conditions_02, max_time).then(async () => {
+        await driver
+          .findElement(By.xpath(input_path_01))
+          .sendKeys(loca)
+          .then(async () => {
+            const location_path = "//span[@title='" + loca + "']";
+            const conditions_02 = until.elementLocated({
+              xpath: location_path,
+            });
+            await driver.wait(conditions_02, max_time).then(async () => {
+              const target_path =
+                "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Target'])[1]";
+              const excluded_path =
+                "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Exclude'])[1]";
+              if (DATA.location_target[index] === "target") {
+                const button = driver.findElement(By.xpath(target_path));
+                await driver.executeScript("arguments[0].click()", button);
+              } else {
+                const button = driver.findElement(By.xpath(excluded_path));
+                await driver.executeScript("arguments[0].click()", button);
+              }
+              // const target = await driver.findElement(By.xpath(target_path));
+              // await driver.findElement(By.xpath(location_path)).click();
+            });
+          });
+      });
+    }
+    // click on dropdown
+    const location_option = "//div[normalize-space()='Location options']";
+    const click_01 = await driver.findElement(By.xpath(location_option));
     await driver
       .executeScript("arguments[0].click()", click_01)
       .then(async () => {
@@ -144,10 +211,10 @@ const handleStep2 = async (driver) => {
             await driver.findElement(By.xpath(all_language_path)).click();
             // handle next button
             const next_button_path =
-              "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+              "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-46']//div[@class='_ngcontent-awn-CM_EDITING-49']//div[@class='content _ngcontent-awn-CM_EDITING-13']";
+            const next = await driver.findElement(By.xpath(next_button_path));
             await driver
-              .findElement(By.xpath(next_button_path))
-              .click()
+              .executeScript("arguments[0].click()", next)
               .then(async () => {
                 await handleStep3(driver);
               });
@@ -169,55 +236,91 @@ const handleStep3 = async (driver) => {
       "//input[@aria-label='Target cost per install in US Dollar']";
     await driver.findElement(By.xpath(input_bid_path)).sendKeys(DATA.bid);
 
+    // handle next button
     const next_button_path =
-      "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-    await driver
-      .findElement(By.xpath(next_button_path))
-      .click()
-      .then(async () => {
-        await handleStep4(driver);
-      });
+      "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-46']//div[@class='_ngcontent-awn-CM_EDITING-49']//div[@class='content _ngcontent-awn-CM_EDITING-13']";
+    const next = await driver.findElement(By.xpath(next_button_path));
+    await driver.executeScript("arguments[0].click()", next).then(async () => {
+      await handleStep4(driver);
+    });
   });
 };
 const handleStep4 = async (driver) => {
   await driver.sleep(3000);
   const max_time = 30000;
-  // handle confirm button
-  const confirm_button_path =
-    "//div[@class='content _ngcontent-awn-AWSM-5'][normalize-space()='Confirm']";
-  const is_button_next_visible = await driver
-    .findElement(By.xpath(confirm_button_path))
-    .isDisplayed();
-  const button_confirm = await driver.findElement(
-    By.xpath(confirm_button_path)
-  );
-  if (is_button_next_visible) {
-    await driver.executeScript("arguments[0].click()", button_confirm);
-  }
-  if (DATA.headline && DATA.headline.length > 1) {
-  }
   // handle headline
-  const input_headline_path =
-    "(//div[@class='top-section _ngcontent-awn-CM_EDITING-40'])[4]";
+  const input_headline_path = "(//input[@aria-label='Headline 1 of 5'])[1]";
   const conditions_01 = until.elementLocated({
     xpath: input_headline_path,
   });
   await driver.wait(conditions_01, max_time).then(async () => {
+    for (const [index, value] of DATA.headline.entries()) {
+      const input_headline_path =
+        "(//input[@aria-label='Headline " + (index + 1) + " of 5'])[1]";
+      await driver.findElement(By.xpath(input_headline_path)).sendKeys(value);
+    }
+    for (const [index, value] of DATA.desc.entries()) {
+      const input_des_path =
+        "(//input[@aria-label='Description " + (index + 1) + " of 5'])[1]";
+      await driver.findElement(By.xpath(input_des_path)).sendKeys(value);
+    }
+
+    // handle choose video
+    const choose_video_path =
+      "//material-button[@aria-label='Add videos']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+    const choose_video = await driver.findElement(By.xpath(choose_video_path));
     await driver
-      .findElement(By.xpath(input_headline_path))
-      .sendKeys(DATA.headline);
+      .executeScript("arguments[0].click()", choose_video)
+      .then(async () => {
+        await handleStep5(driver);
+      });
   });
-  // await driver.wait(is_button_next_visible, max_time).then(async () => {
-  //   if (is_button_next_visible) {
-  //     await driver.findElement(By.xpath(confirm_button_path)).click();
-  //     const input_headline_path = "(//input[@aria-label='Headline 1 of 5'])[1]";
-  //     await driver
-  //       .findElement(By.xpath(input_headline_path))
-  //       .sendKeys(DATA.headline);
-  //   } else {
-  //     console.log("button next is not visible");
-  //   }
-  // });
+  // (//input[@aria-label='Description 1 of 5'])[1]
+};
+const handleStep5 = async (driver) => {
+  const max_time = 30000;
+  const loading_path = "//span[normalize-space()='Search YouTube']";
+  const conditions_01 = until.elementLocated({
+    xpath: loading_path,
+  });
+  await driver.wait(conditions_01, max_time).then(async () => {
+    const input = await driver.findElement(By.xpath(loading_path));
+    await driver.executeScript("arguments[0].click()", input).then(async () => {
+      const input_search_path =
+        "//label[@class='input-container _ngcontent-awn-CM_EDITING-27 floated-label']//input[@type='text']";
+      const conditions_02 = until.elementLocated({
+        xpath: input_search_path,
+      });
+      await driver.wait(conditions_02, max_time).then(async () => {
+        for (const [index, value] of DATA.videos.entries()) {
+          await driver
+            .findElement(By.xpath(input_search_path))
+            .sendKeys(value)
+            .then(async () => {
+              await driver
+                .findElement(By.xpath(input_search_path))
+                .click()
+                .then(async () => {
+                  const exist_video_path =
+                    "//div[@class='video-item _ngcontent-awn-CM_EDITING-166']";
+                  const conditions_03 = until.elementLocated({
+                    xpath: exist_video_path,
+                  });
+                  await driver.wait(conditions_03, max_time).then(async () => {
+                    await driver
+                      .findElement(By.xpath(exist_video_path))
+                      .click();
+                    await driver.sleep(1000);
+                    await driver
+                      .findElement(By.xpath(input_search_path))
+                      .clear();
+                  });
+                });
+            });
+        }
+      });
+    });
+  });
 };
 runTest();
 module.exports = {
