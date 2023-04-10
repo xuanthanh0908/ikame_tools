@@ -9,6 +9,7 @@ const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { errorConverter, errorHandler } = require("./utils/error");
 const { socketHandler } = require("./socket");
+const { handleFetchApiGgAds } = require("./tools/automate_ggAds");
 const Server = socketIo.Server;
 const app = express();
 let server;
@@ -37,12 +38,17 @@ app.use(express.json());
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
 
-const createCampaign = catchAsync(async (req, res, next) => {
+const createCampaignTikTok = catchAsync(async (req, res, next) => {
   await handleFetchApi(req, res, next);
   res.status(200).send({ message: "success" });
 });
+const createCampaignGgAds = catchAsync(async (req, res, next) => {
+  await handleFetchApiGgAds(req, res, next);
+  res.status(200).send({ message: "success" });
+});
 
-app.post("/tool/tiktok", createCampaign);
+app.post("/tool/tiktok", createCampaignTikTok);
+app.post("/tool/google-ads", createCampaignGgAds);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

@@ -8,6 +8,7 @@ const catchAsync = require("../utils/catchAsync");
 const { emitEvent } = require("../utils/socket");
 const readline = require("readline");
 const fs = require("fs");
+const { Actions } = require("selenium-webdriver/lib/input");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9001/api/v1";
 const url = {
@@ -164,16 +165,26 @@ const handleAddText = async (driver, inputArr, userId, id) => {
     }
 
     /// handle submit - upload ads
+
     const submitButtonPath = "//button[@data-testid='common_next_button']";
     const finshishBtn = await driver.findElement(By.xpath(submitButtonPath));
-    await driver
-      .executeScript("arguments[0].click();", finshishBtn)
+    await new Actions(driver)
+      .doubleClick(finshishBtn)
+      .perform()
       .then(async () => {
         console.log("RUN TEST SUCCESS");
         await updateStatusCampaign(id, "completed", userId, "Run test success");
         await driver.sleep(30000);
-        await driver.quit();
+        // await driver.quit();
       });
+    // await driver
+    //   .executeScript("arguments[0].click();", finshishBtn)
+    //   .then(async () => {
+    //     console.log("RUN TEST SUCCESS");
+    //     await updateStatusCampaign(id, "completed", userId, "Run test success");
+    //     await driver.sleep(30000);
+    //     // await driver.quit();
+    //   });
   } catch (error) {
     console.log("error: ", error);
     await updateStatusCampaign(id, "canceled", userId);
@@ -194,269 +205,299 @@ const handleWaitToTargeting = async (driver, data, userId, id) => {
       // Find the element that causes the hidden element to appear
       const triggerElement = await driver.findElement(By.xpath(xpathCheck));
       // handle select app
-      // const selectAppPath = "//input[@placeholder='Select app']";
-      // const condition_select_app = until.elementLocated({
-      //   xpath: selectAppPath,
-      // });
-      // await driver.wait(condition_select_app, maxTime).then(async (e) => {
-      //   await driver.findElement(By.xpath(selectAppPath)).click();
+      const selectAppPath = "//input[@placeholder='Select app']";
+      const condition_select_app = until.elementLocated({
+        xpath: selectAppPath,
+      });
+      await driver.wait(condition_select_app, maxTime).then(async (e) => {
+        await driver.findElement(By.xpath(selectAppPath)).click();
 
-      //   const app_name_paths = "//div[@class='item-text item-name']";
-      //   const condition_ = until.elementLocated({
-      //     xpath: app_name_paths,
-      //   });
-      //   await driver.wait(condition_, maxTime).then(async (e) => {
-      //     const app = data.app_name;
-      //     const select_app_p = "//div[normalize-space()='" + app + "']";
-      //     await driver.findElement(By.xpath(select_app_p)).click();
+        const app_name_paths = "//div[@class='item-text item-name']";
+        const condition_ = until.elementLocated({
+          xpath: app_name_paths,
+        });
+        await driver.wait(condition_, maxTime).then(async (e) => {
+          const app = data.app_name;
+          const select_app_p = "//div[normalize-space()='" + app + "']";
+          await driver.findElement(By.xpath(select_app_p)).click();
 
-      //     const blurPath =
-      //       "//span[normalize-space()='Where would you like to show your ads?']";
-      //     const blur = driver.findElement(By.xpath(blurPath));
-      //     await driver.executeScript("arguments[0].click();", blur);
-      // Move the mouse over the trigger element to make the hidden element visible
-      driver
-        .actions()
-        .move({ origin: triggerElement })
-        .perform()
-        .then(async function () {
-          mouseHoverElement(triggerElement, driver);
-          const hiddenElementXpath =
-            "//button[@class='vi-button vi-byted-button vi-button--text index_spcLocationEditBtn_Y2bQH']//span[contains(text(),'Edit')]";
-          await driver
-            .wait(
-              until.elementsLocated({
-                xpath: hiddenElementXpath,
-              }),
-              maxTime
-            )
+          const blurPath =
+            "//span[normalize-space()='Where would you like to show your ads?']";
+          const blur = driver.findElement(By.xpath(blurPath));
+          await driver.executeScript("arguments[0].click();", blur);
+          // Move the mouse over the trigger element to make the hidden element visible
+          driver
+            .actions()
+            .move({ origin: triggerElement })
+            .perform()
             .then(async function () {
-              const findHiddenElement = await driver.findElement(
-                By.xpath(hiddenElementXpath)
-              );
-              await driver.executeScript(
-                "arguments[0].click();",
-                findHiddenElement
-              );
-              const inputPath =
-                "//div[@class='vi-select-tree index_locationFormItem_dP0yb']//div//div[@class='vi-select-tree-inside-container']";
-              const findInputEl = await driver.findElement(By.xpath(inputPath));
+              mouseHoverElement(triggerElement, driver);
+              const hiddenElementXpath =
+                "//button[@class='vi-button vi-byted-button vi-button--text index_spcLocationEditBtn_Y2bQH']//span[contains(text(),'Edit')]";
               await driver
-                .executeScript(
-                  "arguments[0].dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));",
-                  findInputEl
+                .wait(
+                  until.elementsLocated({
+                    xpath: hiddenElementXpath,
+                  }),
+                  maxTime
                 )
                 .then(async function () {
-                  const x_close_path =
-                    "//i[@class='right-icon vi-icon-circle-close']";
-                  const condition_close = until.elementLocated({
-                    xpath: x_close_path,
-                  });
+                  const findHiddenElement = await driver.findElement(
+                    By.xpath(hiddenElementXpath)
+                  );
+                  await driver.executeScript(
+                    "arguments[0].click();",
+                    findHiddenElement
+                  );
+                  const inputPath =
+                    "//div[@class='vi-select-tree index_locationFormItem_dP0yb']//div//div[@class='vi-select-tree-inside-container']";
+                  const findInputEl = await driver.findElement(
+                    By.xpath(inputPath)
+                  );
                   await driver
-                    .wait(condition_close, maxTime)
-                    .then(async (e) => {
-                      await driver.sleep(1000);
-                      const delete_all_location = await driver.findElement(
-                        By.xpath(x_close_path)
-                      );
-
-                      driver.executeScript(
-                        "arguments[0].click();",
-                        delete_all_location
-                      );
-                      driver.executeScript(
-                        "arguments[0].click();",
-                        findInputEl
-                      );
-                      await driver.sleep(1000);
-                      // wait for input search
-                      const inputSearchPath = "//input[@placeholder='Search']";
-                      //  wait for input search to be active
-                      const condition = until.elementLocated({
-                        xpath: inputSearchPath,
+                    .executeScript(
+                      "arguments[0].dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));",
+                      findInputEl
+                    )
+                    .then(async function () {
+                      const x_close_path =
+                        "//i[@class='right-icon vi-icon-circle-close']";
+                      const condition_close = until.elementLocated({
+                        xpath: x_close_path,
                       });
                       await driver
-                        .wait(condition, maxTime)
-                        .then(async function () {
-                          const inactivatePath =
-                            "//span[normalize-space()='Who should see your ads?']";
-                          await handleChooseLocation(
-                            driver,
-                            data.locations,
-                            inputSearchPath,
-                            inactivatePath,
-                            userId,
-                            id
+                        .wait(condition_close, maxTime)
+                        .then(async (e) => {
+                          await driver.sleep(1000);
+                          const delete_all_location = await driver.findElement(
+                            By.xpath(x_close_path)
                           );
 
-                          // handle mouse hover language input
-                          const languageInputPath =
-                            "//label[normalize-space()='Languages']";
-                          const findLanguageInputEl = await driver.findElement(
-                            By.xpath(languageInputPath)
-                          );
-                          driver
-                            .actions()
-                            .move({ origin: findLanguageInputEl })
-                            .perform()
-                            .then(async function () {
-                              mouseHoverElement(findLanguageInputEl, driver);
-                              const hiddenElementXpath =
-                                "/html[1]/body[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/section[2]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/button[1]/span[1]";
+                          await driver
+                            .executeScript(
+                              "arguments[0].click();",
+                              delete_all_location
+                            )
+                            .then(async () => {
+                              await driver.executeScript(
+                                "arguments[0].click();",
+                                findInputEl
+                              );
+                              await driver.sleep(1000);
+                              // wait for input search
+                              const inputSearchPath =
+                                "//input[@placeholder='Search']";
+                              //  wait for input search to be active
+                              const condition = until.elementLocated({
+                                xpath: inputSearchPath,
+                              });
                               await driver
-                                .wait(
-                                  until.elementsLocated({
-                                    xpath: hiddenElementXpath,
-                                  }),
-                                  maxTime
-                                )
+                                .wait(condition, maxTime)
                                 .then(async function () {
-                                  await driver
-                                    .findElement(By.xpath(hiddenElementXpath))
-                                    .click();
-                                  const inputLanguagePath =
-                                    "//div[@class='vi-select-tree']//div//div[@class='vi-select-tree-inside-container']";
-                                  await driver
-                                    .findElement(By.xpath(inputLanguagePath))
-                                    .click();
-                                  await handleChooseLanguage(
+                                  const inactivatePath =
+                                    "//span[normalize-space()='Who should see your ads?']";
+                                  await handleChooseLocation(
                                     driver,
-                                    ["English"],
-                                    inactivatePath
-                                  );
-                                  // handle change budget input
-                                  if (data.budget !== 50) {
-                                    const budgetInputPath =
-                                      "//input[@data-tea='create_adgroup_budget_num']";
-                                    clearInput(driver, budgetInputPath);
-                                    driver.sleep(1000);
-                                    await driver
-                                      .findElement(By.xpath(budgetInputPath))
-                                      .sendKeys(data.budget);
-                                  }
-                                });
-                              // handle select start date
-                              const startDatePath =
-                                "//input[@placeholder='Start date']";
-                              const selectDatePath =
-                                "(//input[@placeholder='Select date'])[1]";
-                              const selectTimePath =
-                                "(//input[@placeholder='Select time'])[1]";
-                              const end_time_path =
-                                "//input[@placeholder='End time']";
-
-                              const selectEndDatePath =
-                                "(//input[@placeholder='Select date'])[2]";
-                              const selectEndTimePath =
-                                "(//input[@placeholder='Select time'])[2]";
-                              // select endate
-                              const choose_range_date_path =
-                                "//span[normalize-space()='Run ad group within a date range']";
-                              const el_choose_range = await driver.findElement(
-                                By.xpath(choose_range_date_path)
-                              );
-                              await driver
-                                .executeScript(
-                                  "arguments[0].click()",
-                                  el_choose_range
-                                )
-                                .then(async () => {
-                                  // enable input start date
-                                  await driver
-                                    .findElement(By.xpath(startDatePath))
-                                    .click();
-                                  await driver.sleep(1000);
-                                  // clear select date input
-                                  clearInput(driver, selectDatePath);
-                                  await driver
-                                    .findElement(By.xpath(selectDatePath))
-                                    .sendKeys(data.startDate.date);
-                                  driver.sleep(1000);
-                                  // clear select time input
-                                  clearInput(driver, selectTimePath);
-                                  await driver
-                                    .findElement(By.xpath(selectTimePath))
-                                    .sendKeys(data.startDate.time);
-                                  // console.log("====start-date", data.startDate.date);
-                                  const split_date =
-                                    data.startDate.date.split("-");
-                                  const EndData_PlusThree =
-                                    split_date[0] +
-                                    "-" +
-                                    split_date[1] +
-                                    "-" +
-                                    (parseInt(split_date[2]) + 3);
-
-                                  // enable input end date
-                                  await driver
-                                    .findElement(By.xpath(end_time_path))
-                                    .click();
-                                  driver.sleep(1000);
-                                  // clear select date input
-                                  clearInput(driver, selectEndDatePath);
-                                  await driver
-                                    .findElement(By.xpath(selectEndDatePath))
-                                    .sendKeys(EndData_PlusThree);
-                                  driver.sleep(1000);
-                                  // clear select time input
-                                  clearInput(driver, selectEndTimePath);
-                                  await driver
-                                    .findElement(By.xpath(selectEndTimePath))
-                                    .sendKeys(data.startDate.time);
-                                  // await driver
-                                  //   .findElement(By.xpath(end_time_path))
-                                  //   .click();
-
-                                  // inactivate input end date
-                                  const inactivateSelectPath =
-                                    "//span[@class='budget-schedule-title']";
-                                  const inaac = await driver.findElement(
-                                    By.xpath(inactivateSelectPath)
-                                  );
-                                  await driver.executeScript(
-                                    "arguments[0].click();",
-                                    inaac
-                                  );
-                                });
-                              // handle select video
-                              await handleVideos(
-                                driver,
-                                data.videos,
-                                userId,
-                                id
-                              );
-                              // scroll to end page
-                              // find the <body> element
-
-                              const buttonElPath =
-                                "//div[@class='index_title_gRuIn']//span[contains(text(),'Tracking')]";
-                              const el = driver.findElement(
-                                By.xpath(buttonElPath)
-                              );
-                              // scroll to the bottom of the page
-                              driver
-                                .executeScript(
-                                  "arguments[0].scrollIntoView(true)",
-                                  el
-                                )
-                                .then(async function () {
-                                  // handle add text
-                                  await handleAddText(
-                                    driver,
-                                    data.texts,
+                                    data.locations,
+                                    inputSearchPath,
+                                    inactivatePath,
                                     userId,
                                     id
                                   );
+
+                                  // handle mouse hover language input
+                                  const languageInputPath =
+                                    "//label[normalize-space()='Languages']";
+                                  const findLanguageInputEl =
+                                    await driver.findElement(
+                                      By.xpath(languageInputPath)
+                                    );
+                                  driver
+                                    .actions()
+                                    .move({ origin: findLanguageInputEl })
+                                    .perform()
+                                    .then(async function () {
+                                      mouseHoverElement(
+                                        findLanguageInputEl,
+                                        driver
+                                      );
+                                      const hiddenElementXpath =
+                                        "/html[1]/body[1]/div[3]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/form[1]/div[2]/div[1]/section[2]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/button[1]/span[1]";
+                                      await driver
+                                        .wait(
+                                          until.elementsLocated({
+                                            xpath: hiddenElementXpath,
+                                          }),
+                                          maxTime
+                                        )
+                                        .then(async function () {
+                                          await driver
+                                            .findElement(
+                                              By.xpath(hiddenElementXpath)
+                                            )
+                                            .click();
+                                          const inputLanguagePath =
+                                            "//div[@class='vi-select-tree']//div//div[@class='vi-select-tree-inside-container']";
+                                          await driver
+                                            .findElement(
+                                              By.xpath(inputLanguagePath)
+                                            )
+                                            .click();
+                                          await handleChooseLanguage(
+                                            driver,
+                                            ["English"],
+                                            inactivatePath
+                                          );
+                                          // handle change budget input
+                                          if (data.budget !== 50) {
+                                            const budgetInputPath =
+                                              "//input[@data-tea='create_adgroup_budget_num']";
+                                            clearInput(driver, budgetInputPath);
+                                            driver.sleep(1000);
+                                            await driver
+                                              .findElement(
+                                                By.xpath(budgetInputPath)
+                                              )
+                                              .sendKeys(data.budget);
+                                          }
+                                        });
+                                      // handle select start date
+                                      const startDatePath =
+                                        "//input[@placeholder='Start date']";
+                                      const selectDatePath =
+                                        "(//input[@placeholder='Select date'])[1]";
+                                      const selectTimePath =
+                                        "(//input[@placeholder='Select time'])[1]";
+                                      const end_time_path =
+                                        "//input[@placeholder='End time']";
+
+                                      const selectEndDatePath =
+                                        "(//input[@placeholder='Select date'])[2]";
+                                      const selectEndTimePath =
+                                        "(//input[@placeholder='Select time'])[2]";
+                                      // select endate
+                                      const choose_range_date_path =
+                                        "//span[normalize-space()='Run ad group within a date range']";
+                                      const el_choose_range =
+                                        await driver.findElement(
+                                          By.xpath(choose_range_date_path)
+                                        );
+                                      await driver
+                                        .executeScript(
+                                          "arguments[0].click()",
+                                          el_choose_range
+                                        )
+                                        .then(async () => {
+                                          // enable input start date
+                                          await driver
+                                            .findElement(
+                                              By.xpath(startDatePath)
+                                            )
+                                            .click();
+                                          await driver.sleep(1000);
+                                          // clear select date input
+                                          clearInput(driver, selectDatePath);
+                                          await driver
+                                            .findElement(
+                                              By.xpath(selectDatePath)
+                                            )
+                                            .sendKeys(data.startDate.date);
+                                          driver.sleep(1000);
+                                          // clear select time input
+                                          clearInput(driver, selectTimePath);
+                                          await driver
+                                            .findElement(
+                                              By.xpath(selectTimePath)
+                                            )
+                                            .sendKeys(data.startDate.time);
+                                          // console.log("====start-date", data.startDate.date);
+                                          const split_date =
+                                            data.startDate.date.split("-");
+                                          const EndData_PlusThree =
+                                            split_date[0] +
+                                            "-" +
+                                            split_date[1] +
+                                            "-" +
+                                            (parseInt(split_date[2]) + 3);
+
+                                          // enable input end date
+                                          await driver
+                                            .findElement(
+                                              By.xpath(end_time_path)
+                                            )
+                                            .click();
+                                          driver.sleep(1000);
+                                          // clear select date input
+                                          clearInput(driver, selectEndDatePath);
+                                          await driver
+                                            .findElement(
+                                              By.xpath(selectEndDatePath)
+                                            )
+                                            .sendKeys(EndData_PlusThree);
+                                          driver.sleep(1000);
+                                          // clear select time input
+                                          clearInput(driver, selectEndTimePath);
+                                          await driver
+                                            .findElement(
+                                              By.xpath(selectEndTimePath)
+                                            )
+                                            .sendKeys(data.startDate.time);
+                                          // await driver
+                                          //   .findElement(By.xpath(end_time_path))
+                                          //   .click();
+
+                                          // inactivate input end date
+                                          const inactivateSelectPath =
+                                            "//span[@class='budget-schedule-title']";
+                                          const inaac =
+                                            await driver.findElement(
+                                              By.xpath(inactivateSelectPath)
+                                            );
+                                          await driver.executeScript(
+                                            "arguments[0].click();",
+                                            inaac
+                                          );
+                                        });
+                                      // handle select video
+                                      await handleVideos(
+                                        driver,
+                                        data.videos,
+                                        userId,
+                                        id
+                                      );
+                                      // scroll to end page
+                                      // find the <body> element
+
+                                      const buttonElPath =
+                                        "//div[@class='index_title_gRuIn']//span[contains(text(),'Tracking')]";
+                                      const el = driver.findElement(
+                                        By.xpath(buttonElPath)
+                                      );
+                                      // scroll to the bottom of the page
+                                      driver
+                                        .executeScript(
+                                          "arguments[0].scrollIntoView(true)",
+                                          el
+                                        )
+                                        .then(async function () {
+                                          // handle add text
+                                          await handleAddText(
+                                            driver,
+                                            data.texts,
+                                            userId,
+                                            id
+                                          );
+                                        });
+                                      // })
+                                    });
                                 });
-                              // })
                             });
                         });
                     });
                 });
             });
         });
-      //   });
-      // });
+      });
     });
   } catch (error) {
     updateStatusCampaign(id, "canceled", userId);
@@ -505,38 +546,37 @@ const clearInput = async (driver, xpath) => {
 };
 const runTest = catchAsync(async (req, res, next) => {
   let driver;
-  try {
-    let profile = [];
-    const appDataPath =
-      process.env.APPDATA + "\\Mozilla\\Firefox\\profiles.ini"; // Get the path to the AppData folder
-    const readInterface = readline.createInterface({
-      input: fs.createReadStream(appDataPath),
-      output: process.stdout,
-      console: false,
-    });
-    readInterface.on("line", function (line) {
-      profile.push(line);
-    });
 
-    /// wait for readInterface to close
-    events.once(readInterface, "close").then(async (e) => {
-      const profilePath =
-        process.env.APPDATA + "\\Mozilla\\Firefox\\" + profile[1].split("=")[1];
-      const data = req.data;
-      // console.log("data", data);
-      const { id, userId } = req.body;
-      let options = new firefox.Options();
-      options.setProfile(profilePath);
-      options.setPreference("layout.css.devPixelsPerPx", "0.7");
+  let profile = [];
+  const appDataPath = process.env.APPDATA + "\\Mozilla\\Firefox\\profiles.ini"; // Get the path to the AppData folder
+  const readInterface = readline.createInterface({
+    input: fs.createReadStream(appDataPath),
+    output: process.stdout,
+    console: false,
+  });
+  readInterface.on("line", function (line) {
+    profile.push(line);
+  });
 
-      //To wait for browser to build and launch properly
-      driver = await new webdriver.Builder()
-        .forBrowser("firefox")
-        .setFirefoxOptions(options)
-        .build();
+  /// wait for readInterface to close
+  events.once(readInterface, "close").then(async (e) => {
+    const profilePath =
+      process.env.APPDATA + "\\Mozilla\\Firefox\\" + profile[1].split("=")[1];
+    const data = req.data;
+    // console.log("data", data);
+    const { id, userId } = req.body;
+    let options = new firefox.Options();
+    options.setProfile(profilePath);
+    options.setPreference("layout.css.devPixelsPerPx", "0.7");
 
-      driver.manage().window().maximize();
+    //To wait for browser to build and launch properly
+    driver = await new webdriver.Builder()
+      .forBrowser("firefox")
+      .setFirefoxOptions(options)
+      .build();
 
+    driver.manage().window().maximize();
+    try {
       await driver.get(data.campaign_url);
       await driver.sleep(1000);
       let maxTime = 30000;
@@ -556,12 +596,10 @@ const runTest = catchAsync(async (req, res, next) => {
           }
         );
       });
-    });
-  } catch (e) {
-    console.log("RUN TEST FAILED", e);
-    updateStatusCampaign(id, "canceled", userId);
-  } finally {
-    if (driver) {
+    } catch (e) {
+      console.log("RUN TEST FAILED", e);
+      updateStatusCampaign(id, "canceled", userId);
+    } finally {
       const startOverPath =
         "//button[@data-tea-click='draft_confirmation_start_over']";
       const findButton = await driver
@@ -573,7 +611,7 @@ const runTest = catchAsync(async (req, res, next) => {
         await driver.quit();
       }
     }
-  }
+  });
 });
 
 const handleFetchApi = catchAsync(async (req, res, next) => {
@@ -616,4 +654,5 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
 // handleFetchApi("641bd665a3a4a9f7f4cf4ee6");
 module.exports = {
   handleFetchApi,
+  updateStatusCampaign,
 };
