@@ -175,7 +175,7 @@ const handleAddText = async (driver, inputArr, userId, id) => {
         console.log("RUN TEST SUCCESS");
         await updateStatusCampaign(id, "completed", userId, "Run test success");
         await driver.sleep(30000);
-        // await driver.quit();
+        await driver.quit();
       });
     // await driver
     //   .executeScript("arguments[0].click();", finshishBtn)
@@ -268,7 +268,6 @@ const handleWaitToTargeting = async (driver, data, userId, id) => {
                       await driver
                         .wait(condition_close, maxTime)
                         .then(async (e) => {
-                          await driver.sleep(1000);
                           const delete_all_location = await driver.findElement(
                             By.xpath(x_close_path)
                           );
@@ -279,11 +278,11 @@ const handleWaitToTargeting = async (driver, data, userId, id) => {
                               delete_all_location
                             )
                             .then(async () => {
+                              await driver.sleep(1000);
                               await driver.executeScript(
                                 "arguments[0].click();",
                                 findInputEl
                               );
-                              await driver.sleep(1000);
                               // wait for input search
                               const inputSearchPath =
                                 "//input[@placeholder='Search']";
@@ -589,12 +588,13 @@ const runTest = catchAsync(async (req, res, next) => {
           .findElement(By.xpath("//div[normalize-space()='App promotion']"))
           .click();
 
-        await waitSwitchStatus(driver, data, userId, id).then(
-          async function () {
-            console.log("TEST RUNNING");
-            await updateStatusCampaign(id, "running", userId, "Running test");
-          }
-        );
+        await waitSwitchStatus(driver, data, userId, id);
+        // .then(
+        //   async function () {
+        //     console.log("TEST RUNNING");
+        //     await updateStatusCampaign(id, "running", userId, "Running test");
+        //   }
+        // );
       });
     } catch (e) {
       console.log("RUN TEST FAILED", e);
@@ -642,7 +642,7 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
         texts: origin_data.texts.flat(1),
         profile: origin_data.profile,
       };
-      console.log("==========DATA===========", campaign_data);
+      // console.log("==========DATA===========", campaign_data);
       req.data = campaign_data;
       if (origin_data.status === "pending" || origin_data.status === "canceled")
         runTest(req, res, next);
@@ -655,4 +655,5 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
 module.exports = {
   handleFetchApi,
   updateStatusCampaign,
+  clearInput,
 };

@@ -5,7 +5,7 @@ const webdriver = require("selenium-webdriver");
 const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
-const { updateStatusCampaign } = require("./automate_titktok");
+const { updateStatusCampaign, clearInput } = require("./automate_titktok");
 // const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
@@ -139,50 +139,56 @@ const handleStep2 = async (DATA, driver, userId, id) => {
     xpath: find_are_loading_path,
   });
   try {
+    if (DATA.location_to_target === "Enter another location") {
+      await driver.wait(conditions_01, max_time).then(async () => {
+        // dropdown location options
+        const location_input_path =
+          "//div[contains(text(),'Enter another location')]";
+        const input_el = await driver.findElement(
+          By.xpath(location_input_path)
+        );
+        await driver.executeScript("arguments[0].click()", input_el);
+        // await driver.sleep(2000);
+        // console.log("====================================", DATA.locations);
+        for (const [index, loca] of DATA.locations.entries()) {
+          console.log("============AO===========", loca);
+          //div[@class='entry _ngcontent-awn-CM_EDITING-171 active']
+          const input_path_01 =
+            "//material-input[@role='combobox']//input[@type='text']";
+          const conditions_02 = until.elementLocated({
+            xpath: input_path_01,
+          });
+          await driver.wait(conditions_02, max_time).then(async () => {
+            await driver
+              .findElement(By.xpath(input_path_01))
+              .sendKeys(loca)
+              .then(async () => {
+                const location_path = "//span[@title='" + loca + "']";
+                const conditions_02 = until.elementLocated({
+                  xpath: location_path,
+                });
+                await driver.wait(conditions_02, max_time).then(async () => {
+                  const target_path =
+                    "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Target'])[1]";
+                  const excluded_path =
+                    "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Exclude'])[1]";
+                  if (DATA.location_target[index] === "target") {
+                    const button = driver.findElement(By.xpath(target_path));
+                    await driver.executeScript("arguments[0].click()", button);
+                  } else {
+                    const button = driver.findElement(By.xpath(excluded_path));
+                    await driver.executeScript("arguments[0].click()", button);
+                  }
+                  // const target = await driver.findElement(By.xpath(target_path));
+                  // await driver.findElement(By.xpath(location_path)).click();
+                });
+              });
+          });
+        }
+      });
+    }
+    // click on dropdown
     await driver.wait(conditions_01, max_time).then(async () => {
-      // dropdown location options
-      const location_input_path =
-        "//div[contains(text(),'Enter another location')]";
-      const input_el = await driver.findElement(By.xpath(location_input_path));
-      await driver.executeScript("arguments[0].click()", input_el);
-      // await driver.sleep(2000);
-      // console.log("====================================", DATA.locations);
-      for (const [index, loca] of DATA.locations.entries()) {
-        console.log("============AO===========", loca);
-        //div[@class='entry _ngcontent-awn-CM_EDITING-171 active']
-        const input_path_01 =
-          "//material-input[@role='combobox']//input[@type='text']";
-        const conditions_02 = until.elementLocated({
-          xpath: input_path_01,
-        });
-        await driver.wait(conditions_02, max_time).then(async () => {
-          await driver
-            .findElement(By.xpath(input_path_01))
-            .sendKeys(loca)
-            .then(async () => {
-              const location_path = "//span[@title='" + loca + "']";
-              const conditions_02 = until.elementLocated({
-                xpath: location_path,
-              });
-              await driver.wait(conditions_02, max_time).then(async () => {
-                const target_path =
-                  "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Target'])[1]";
-                const excluded_path =
-                  "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Exclude'])[1]";
-                if (DATA.location_target[index] === "target") {
-                  const button = driver.findElement(By.xpath(target_path));
-                  await driver.executeScript("arguments[0].click()", button);
-                } else {
-                  const button = driver.findElement(By.xpath(excluded_path));
-                  await driver.executeScript("arguments[0].click()", button);
-                }
-                // const target = await driver.findElement(By.xpath(target_path));
-                // await driver.findElement(By.xpath(location_path)).click();
-              });
-            });
-        });
-      }
-      // click on dropdown
       const location_option = "//div[normalize-space()='Location options']";
       const click_01 = await driver.findElement(By.xpath(location_option));
       await driver
@@ -200,10 +206,19 @@ const handleStep2 = async (DATA, driver, userId, id) => {
               await driver.findElement(By.xpath(input_language)).click();
 
               // choose language
-              const all_language_path =
-                "//span[normalize-space()='All languages']";
-              await driver.findElement(By.xpath(all_language_path)).click();
-              await driver.sleep(2000);
+              if (DATA.languages.length > 0 && DATA.languages[0] !== "All") {
+                for (const lang of DATA.languages) {
+                  const all_language_path =
+                    "//span[normalize-space()='" + lang + "']";
+                  await driver.findElement(By.xpath(all_language_path)).click();
+                  await driver.sleep(2000);
+                }
+              } else {
+                const all_language_path =
+                  "//span[normalize-space()='All languages']";
+                await driver.findElement(By.xpath(all_language_path)).click();
+                await driver.sleep(2000);
+              }
               // handle next button
               const next_button_path =
                 "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
@@ -312,7 +327,9 @@ const handleStep5 = async (DATA, driver, userId, id) => {
           await driver.sleep(5000).then(async () => {
             const input_search_path =
               "(//input[@type='text'])[" +
-              (11 + DATA.headline.length + DATA.desc.length) +
+              (DATA.location_to_target === "Enter another location"
+                ? 11 + DATA.headline.length + DATA.desc.length
+                : 10 + DATA.headline.length + DATA.desc.length) +
               "]";
             const conditions_02 = until.elementLocated({
               xpath: input_search_path,
@@ -365,11 +382,9 @@ const handleStep5 = async (DATA, driver, userId, id) => {
 };
 const handleStep6 = async (DATA, driver, userId, id) => {
   try {
-    // const max_time = 30000;
+    const max_time = 30000;
     await driver.sleep(15000).then(async () => {
       const edit_icon = "(//i[@aria-label='Edit ad group name'])[1]";
-      const pushlish_button_path = "(//material-button[@role='button'])[24]";
-
       const edit_ads_group_name_path_btn = await driver.findElement(
         By.xpath(edit_icon)
       );
@@ -378,27 +393,47 @@ const handleStep6 = async (DATA, driver, userId, id) => {
         .then(async () => {
           const input_ads_group_name_path =
             "(//input[@type='text'])[" +
-            (8 + DATA.headline.length + DATA.desc.length) +
+            (DATA.location_to_target === "Enter another location"
+              ? 8 + DATA.headline.length + DATA.desc.length
+              : 7 + DATA.headline.length + DATA.desc.length) +
             "]";
-          await driver.findElement(By.xpath(input_ads_group_name_path)).clear();
-          await driver
-            .findElement(By.xpath(input_ads_group_name_path))
-            .sendKeys(DATA.ads_group_name);
-          const pushlish_button = await driver.findElement(
-            By.xpath(pushlish_button_path)
-          );
-          await driver
-            .executeScript("arguments[0].click()", pushlish_button)
-            .then(async () => {
-              console.log("RUN TEST SUCCESS");
-              await updateStatusCampaign(
-                id,
-                "completed",
-                userId,
-                "Run test success"
-              );
-              await driver.sleep(30000);
-            });
+          const condition_04 = until.elementLocated({
+            xpath: input_ads_group_name_path,
+          });
+          await driver.wait(condition_04, max_time).then(async () => {
+            await clearInput(driver, input_ads_group_name_path).then(
+              async () => {
+                await driver
+                  .findElement(By.xpath(input_ads_group_name_path))
+                  .sendKeys(DATA.ads_group_name);
+                await driver.sleep(5000).then(async () => {
+                  await driver
+                    .findElements(By.className("button button-next"))
+                    .then(async function (elements) {
+                      console.log("elements", elements.length);
+                      // Print the text of each element
+                      await driver
+                        .executeScript(
+                          "arguments[0].click()",
+                          elements[elements.length - 1]
+                        )
+
+                        .then(async () => {
+                          console.log("RUN TEST SUCCESS");
+                          await updateStatusCampaign(
+                            id,
+                            "completed",
+                            userId,
+                            "Run test success"
+                          );
+                          await driver.sleep(30000);
+                          await driver.quit();
+                        });
+                    });
+                });
+              }
+            );
+          });
         });
     });
   } catch (error) {
