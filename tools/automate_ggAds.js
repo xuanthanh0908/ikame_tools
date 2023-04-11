@@ -237,7 +237,7 @@ const handleStep2 = async (DATA, driver, userId, id) => {
   }
 };
 const handleStep3 = async (DATA, driver, userId, id) => {
-  console.log("=================STEP 3===================", DATA);
+  // console.log("=================STEP 3===================", DATA);
   try {
     const max_time = 30000;
     const input_budget_path =
