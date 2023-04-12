@@ -78,7 +78,7 @@ const runTest = catchAsync(async (req, res, next) => {
               .findElement({
                 xpath: input_search_app,
               })
-              .sendKeys(DATA.app_id)
+              .sendKeys(DATA.package_name)
               .then(async () => {
                 const select_app_path =
                   ".app-info._ngcontent-awn-CM_EDITING-33";
@@ -250,24 +250,85 @@ const handleStep3 = async (DATA, driver, userId, id) => {
         By.xpath(input_budget_path)
       );
       await input_budget.sendKeys(DATA.budget);
-      const input_bid_path =
-        "//input[@aria-label='Target cost per install in US Dollar']";
-      await driver.findElement(By.xpath(input_bid_path)).sendKeys(DATA.bidding);
-      // await driver.sleep(2000);
-      // handle next button
-      const next_button_path =
-        "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-      const condition_04 = until.elementLocated({
-        xpath: next_button_path,
-      });
-      await driver.wait(condition_04, max_time).then(async () => {
-        const next = await driver.findElement(By.xpath(next_button_path));
-        await driver
-          .executeScript("arguments[0].click()", next)
-          .then(async () => {
-            await handleStep4(DATA, driver, userId, id);
-          });
-      });
+      /// handle choose bidding focus
+      const bidding_focus_path_01 = "//div[normalize-space()='Install volume";
+      const bidding_focus_path_02 = "//div[normalize-space()='In-app actions']";
+      const bidding_focus_path_03 =
+        "//div[normalize-space()='In-app action value']";
+      const dropdown_path =
+        "//material-dropdown-select[@aria-label='What do you want to focus on?']";
+      const check_bd_path =
+        DATA.bidding_focus === "In-app action value"
+          ? bidding_focus_path_03
+          : DATA.bidding_focus === "Install volume"
+          ? bidding_focus_path_01
+          : bidding_focus_path_02;
+      await driver
+        .findElement(By.xpath(dropdown_path))
+        .click()
+        .then(async () => {
+          /// handle send data to bidding field
+          const input_bid_path =
+            "//input[@aria-label='Target cost per install in US Dollar']";
+          const target_return_path =
+            "//input[@aria-label='Target return on ad spend']";
+          const target_on_actions =
+            "//input[@aria-label='Target cost per action in US Dollar']";
+          const check_path =
+            DATA.bidding_focus === "In-app action value"
+              ? target_return_path
+              : DATA.bidding_focus === "Install volume"
+              ? input_bid_path
+              : target_on_actions;
+
+          if (
+            DATA.track_install_volume &&
+            DATA.bidding_focus !== "Install volume" &&
+            check_bd_path !== bidding_focus_path_01 &&
+            DATA.track_install_volume.length > 0
+          ) {
+            await driver
+              .findElement(By.xpath(check_bd_path))
+              .click()
+              .then(async () => {
+                for (const track of DATA.track_install_volume) {
+                  await driver
+                    .findElements(By.className("conversion-action"))
+                    .then(async function (elements) {
+                      for (const el of elements) {
+                        const text = await el.getText();
+
+                        if (text === track) {
+                          console.log("==========OK==========");
+                          await el.click();
+                        }
+                      }
+                    });
+                }
+              });
+          }
+          await driver
+            .findElement(By.xpath(check_path))
+            .sendKeys(DATA.bidding)
+            .then(async () => {
+              // await driver.sleep(2000);
+              // handle next button
+              const next_button_path =
+                "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+              const condition_04 = until.elementLocated({
+                xpath: next_button_path,
+              });
+              await driver.wait(condition_04, max_time).then(async () => {
+                await driver
+                  .findElement(By.xpath(next_button_path))
+                  .click()
+                  .then(async () => {
+                    // console.log("OK STEP 3");
+                    await handleStep4(DATA, driver, userId, id);
+                  });
+              });
+            });
+        });
     });
   } catch (error) {
     console.log("RUN TEST FAILED", error);
@@ -325,53 +386,61 @@ const handleStep5 = async (DATA, driver, userId, id) => {
         .executeScript("arguments[0].click()", input)
         .then(async () => {
           await driver.sleep(5000).then(async () => {
-            const input_search_path =
-              "(//input[@type='text'])[" +
-              (DATA.location_to_target === "Enter another location"
-                ? 11 + DATA.headline.length + DATA.desc.length
-                : 10 + DATA.headline.length + DATA.desc.length) +
-              "]";
-            const conditions_02 = until.elementLocated({
-              xpath: input_search_path,
-            });
-            await driver.wait(conditions_02, max_time).then(async () => {
-              const input = await driver.findElement(
-                By.xpath(input_search_path)
-              );
-              for (const [index, value] of DATA.videos.entries()) {
-                await input.sendKeys(value).then(async () => {
-                  // console.log("============click search===========");
-                  const exist_video_path =
-                    "(//material-list-item[@role='listitem'])[1]";
-                  const conditions_03 = until.elementLocated({
-                    xpath: exist_video_path,
-                  });
-                  await driver.wait(conditions_03, max_time).then(async () => {
-                    await driver
-                      .findElement(By.xpath(exist_video_path))
-                      .click();
-                    await input.clear();
-                  });
-                });
-              }
-              // handle save choose video
-              const save_video_path =
-                "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Save'])[3]";
-              const btn_save = await driver.findElement(
-                By.xpath(save_video_path)
-              );
-              await driver.executeScript("arguments[0].click()", btn_save);
+            // const input_search_path =
+            //   "(//input[@type='text'])[" +
+            //   (DATA.location_to_target === "Enter another location"
+            //     ? 11 + DATA.headline.length + DATA.desc.length
+            //     : 10 + DATA.headline.length + DATA.desc.length) +
+            //   "]";
+            const input_search_path = "input input-area";
+            // const conditions_02 = until.elementLocated({
+            //   xpath: input_search_path,
+            // });
+            // await driver.wait(conditions_02, max_time).then(async () => {
+            await driver
+              .findElements(By.className(input_search_path))
+              .then(async (elements) => {
+                for (const [index, value] of DATA.videos.entries()) {
+                  await elements[elements.length - 1]
+                    .sendKeys(value)
+                    .then(async () => {
+                      // console.log("============click search===========");
+                      const exist_video_path =
+                        "(//material-list-item[@role='listitem'])[1]";
+                      const conditions_03 = until.elementLocated({
+                        xpath: exist_video_path,
+                      });
+                      await driver
+                        .wait(conditions_03, max_time)
+                        .then(async () => {
+                          await driver
+                            .findElement(By.xpath(exist_video_path))
+                            .click();
+                          await elements[elements.length - 1].clear();
+                        });
+                    });
+                }
+                // handle save choose video
+                const save_video_path =
+                  "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Save'])[3]";
+                const btn_save = await driver.findElement(
+                  By.xpath(save_video_path)
+                );
+                await driver.executeScript("arguments[0].click()", btn_save);
 
-              // handle next button
-              const next_button_path =
-                "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']";
-              const next = await driver.findElement(By.xpath(next_button_path));
-              await driver
-                .executeScript("arguments[0].click()", next)
-                .then(async () => {
-                  await handleStep6(DATA, driver, userId, id);
-                });
-            });
+                // handle next button
+                const next_button_path =
+                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']";
+                const next = await driver.findElement(
+                  By.xpath(next_button_path)
+                );
+                await driver
+                  .executeScript("arguments[0].click()", next)
+                  .then(async () => {
+                    await handleStep6(DATA, driver, userId, id);
+                  });
+              });
+            // });
           });
         });
     });
@@ -394,8 +463,12 @@ const handleStep6 = async (DATA, driver, userId, id) => {
           const input_ads_group_name_path =
             "(//input[@type='text'])[" +
             (DATA.location_to_target === "Enter another location"
-              ? 8 + DATA.headline.length + DATA.desc.length
-              : 7 + DATA.headline.length + DATA.desc.length) +
+              ? (DATA.bidding_focus === "Install volume" ? 8 : 9) +
+                DATA.headline.length +
+                DATA.desc.length
+              : (DATA.bidding_focus === "Install volume" ? 7 : 8) +
+                DATA.headline.length +
+                DATA.desc.length) +
             "]";
           const condition_04 = until.elementLocated({
             xpath: input_ads_group_name_path,
@@ -427,7 +500,7 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                             "Run test success"
                           );
                           await driver.sleep(30000);
-                          await driver.quit();
+                          // await driver.quit();
                         });
                     });
                 });
@@ -461,10 +534,16 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
         const ex_locations = origin_data.ex_locations;
         const target_location = origin_data.locations;
         const location_types_01 =
-          target_location && target_location.map((i) => "target");
+          target_location &&
+          target_location
+            .map((i) => "target")
+            .filter((m) => m !== undefined && m !== null);
         const location_types_02 =
-          target_location && ex_locations.map((i) => "exclude");
-        if (location_types_01.length > 0 && location_types_02.length > 0) {
+          target_location &&
+          ex_locations
+            .map((i) => "exclude")
+            .filter((m) => m !== undefined && m !== null);
+        if (location_types_01.length > 0 || location_types_02.length > 0) {
           location_target = [...location_types_01, ...location_types_02];
           locations = [...target_location, ...ex_locations];
         }
@@ -473,6 +552,9 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
         campaign_url: origin_data.campaign_url,
         campaign_name: origin_data.campaign_name,
         app_id: origin_data.product,
+        package_name: origin_data.package_name,
+        bidding_focus: origin_data.bidding_focus,
+        track_install_volume: origin_data.track_install_volume,
         location_to_target: origin_data.location_to_target,
         location_target: location_target,
         locations: locations,
@@ -489,7 +571,7 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
         bidding: origin_data.bidding,
         ads_group_name: origin_data.ads_group_name[0],
       };
-      // console.log("==========DATA===========", campaign_data);
+      console.log("==========DATA===========", campaign_data);
       req.data = campaign_data;
       if (origin_data.status === "pending" || origin_data.status === "canceled")
         runTest(req, res, next);
