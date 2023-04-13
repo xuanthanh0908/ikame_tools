@@ -51,71 +51,77 @@ const runTest = catchAsync(async (req, res, next) => {
       driver.manage().window().maximize();
       try {
         await driver.get(DATA.campaign_url);
-        const app_promote_path =
-          "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
-        await driver.findElement(By.xpath(app_promote_path)).click();
+        const pageTitle = "New campaign - Amazing Tools - Google Ads";
+        await driver.wait(until.titleIs(pageTitle), maxTime).then(async () => {
+          const app_promote_path =
+            "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+          await driver.findElement(By.xpath(app_promote_path)).click();
 
-        /// wait for load down components loaded
-        const some_path_loading = "//div[normalize-space()='Android']";
-        const conditions_01 = until.elementLocated({
-          xpath: some_path_loading,
-        });
-        await driver.wait(conditions_01, maxTime).then(async () => {
-          const type_app_path =
-            "//div[normalize-space()='" + DATA.type_app + "']";
-          const app_promote_btn = await driver.findElement(
-            By.xpath(type_app_path)
-          );
-          await driver.executeScript("arguments[0].click();", app_promote_btn);
-          // search your app
-          const input_search_app =
-            "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/app-selection[1]/div[1]/div[1]/app-picker[1]/div[1]/app-picker-input[1]/div[1]/div[2]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
-          const condition_04 = until.elementLocated({
-            xpath: input_search_app,
+          /// wait for load down components loaded
+          const some_path_loading = "//div[normalize-space()='Android']";
+          const conditions_01 = until.elementLocated({
+            xpath: some_path_loading,
           });
-          await driver.wait(condition_04, maxTime).then(async () => {
-            await driver
-              .findElement({
-                xpath: input_search_app,
-              })
-              .sendKeys(DATA.package_name)
-              .then(async () => {
-                const select_app_path =
-                  ".app-info._ngcontent-awn-CM_EDITING-33";
+          await driver.wait(conditions_01, maxTime).then(async () => {
+            const type_app_path =
+              "//div[normalize-space()='" + DATA.type_app + "']";
+            const app_promote_btn = await driver.findElement(
+              By.xpath(type_app_path)
+            );
+            await driver.executeScript(
+              "arguments[0].click();",
+              app_promote_btn
+            );
+            // search your app
+            const input_search_app =
+              "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/app-selection[1]/div[1]/div[1]/app-picker[1]/div[1]/app-picker-input[1]/div[1]/div[2]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+            const condition_04 = until.elementLocated({
+              xpath: input_search_app,
+            });
+            await driver.wait(condition_04, maxTime).then(async () => {
+              await driver
+                .findElement({
+                  xpath: input_search_app,
+                })
+                .sendKeys(DATA.package_name)
+                .then(async () => {
+                  const select_app_path =
+                    ".app-info._ngcontent-awn-CM_EDITING-33";
 
-                const conditions_02 = until.elementLocated({
-                  css: select_app_path,
-                });
-                await driver.wait(conditions_02, maxTime).then(async () => {
-                  await driver.findElement(By.css(select_app_path)).click();
-
-                  const campaign_name_css_path =
-                    "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
-                  const campaign_input = await driver.findElement(
-                    By.xpath(campaign_name_css_path)
-                  );
-                  campaign_input.clear();
-                  driver.sleep(1000);
-                  campaign_input.sendKeys(DATA.campaign_name);
-
-                  /// next button
-                  const button_next_path =
-                    "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-                  const conditions_03 = until.elementLocated({
-                    xpath: button_next_path,
+                  const conditions_02 = until.elementLocated({
+                    css: select_app_path,
                   });
-                  await driver.wait(conditions_03, maxTime).then(async () => {
-                    const button = await driver.findElement(
-                      By.xpath(button_next_path)
+                  await driver.wait(conditions_02, maxTime).then(async () => {
+                    await driver.findElement(By.css(select_app_path)).click();
+
+                    const campaign_name_css_path =
+                      "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+                    const campaign_input = await driver.findElement(
+                      By.xpath(campaign_name_css_path)
                     );
-                    await driver
-                      .executeScript("arguments[0].click()", button)
-                      .then(async () => {
-                        await handleStep2(DATA, driver, userId, id);
-                      });
+                    campaign_input.clear();
+                    driver.sleep(1000);
+                    campaign_input.sendKeys(DATA.campaign_name);
+
+                    /// next button
+                    const button_next_path =
+                      "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                    const conditions_03 = until.elementLocated({
+                      xpath: button_next_path,
+                    });
+                    await driver.wait(conditions_03, maxTime).then(async () => {
+                      const button = await driver.findElement(
+                        By.xpath(button_next_path)
+                      );
+                      await driver
+                        .executeScript("arguments[0].click()", button)
+                        .then(async () => {
+                          await handleStep2(DATA, driver, userId, id);
+                        });
+                    });
                   });
                 });
-              });
+            });
           });
         });
       } finally {
@@ -251,6 +257,8 @@ const handleStep3 = async (DATA, driver, userId, id) => {
       );
       await input_budget.sendKeys(DATA.budget);
       /// handle choose bidding focus
+      const install_volume_path =
+        "//material-dropdown-select[@aria-label='How do you want to track install volume?']";
       const bidding_focus_path_01 = "//div[normalize-space()='Install volume";
       const bidding_focus_path_02 = "//div[normalize-space()='In-app actions']";
       const bidding_focus_path_03 =
@@ -263,70 +271,86 @@ const handleStep3 = async (DATA, driver, userId, id) => {
           : DATA.bidding_focus === "Install volume"
           ? bidding_focus_path_01
           : bidding_focus_path_02;
+      const default_recmm_path =
+        "//conversion-action[@class='_nghost-awn-CM_EDITING-138']";
       await driver
-        .findElement(By.xpath(dropdown_path))
+        .findElement(By.xpath(install_volume_path))
         .click()
         .then(async () => {
-          /// handle send data to bidding field
-          const input_bid_path =
-            "//input[@aria-label='Target cost per install in US Dollar']";
-          const target_return_path =
-            "//input[@aria-label='Target return on ad spend']";
-          const target_on_actions =
-            "//input[@aria-label='Target cost per action in US Dollar']";
-          const check_path =
-            DATA.bidding_focus === "In-app action value"
-              ? target_return_path
-              : DATA.bidding_focus === "Install volume"
-              ? input_bid_path
-              : target_on_actions;
-
-          if (
-            DATA.track_install_volume &&
-            DATA.bidding_focus !== "Install volume" &&
-            check_bd_path !== bidding_focus_path_01 &&
-            DATA.track_install_volume.length > 0
-          ) {
-            await driver
-              .findElement(By.xpath(check_bd_path))
-              .click()
-              .then(async () => {
-                for (const track of DATA.track_install_volume) {
-                  await driver
-                    .findElements(By.className("conversion-action"))
-                    .then(async function (elements) {
-                      for (const el of elements) {
-                        const text = await el.getText();
-
-                        if (text === track) {
-                          console.log("==========OK==========");
-                          await el.click();
-                        }
-                      }
-                    });
-                }
-              });
-          }
           await driver
-            .findElement(By.xpath(check_path))
-            .sendKeys(DATA.bidding)
+            .executeScript(
+              "arguments[0].click()",
+              await driver.findElement(By.xpath(default_recmm_path))
+            )
             .then(async () => {
-              // await driver.sleep(2000);
-              // handle next button
-              const next_button_path =
-                "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-              const condition_04 = until.elementLocated({
-                xpath: next_button_path,
-              });
-              await driver.wait(condition_04, max_time).then(async () => {
-                await driver
-                  .findElement(By.xpath(next_button_path))
-                  .click()
-                  .then(async () => {
-                    // console.log("OK STEP 3");
-                    await handleStep4(DATA, driver, userId, id);
-                  });
-              });
+              await driver
+                .findElement(By.xpath(dropdown_path))
+                .click()
+                .then(async () => {
+                  /// handle send data to bidding field
+                  const input_bid_path =
+                    "//input[@aria-label='Target cost per install in US Dollar']";
+                  const target_return_path =
+                    "//input[@aria-label='Target return on ad spend']";
+                  const target_on_actions =
+                    "//input[@aria-label='Target cost per action in US Dollar']";
+                  const check_path =
+                    DATA.bidding_focus === "In-app action value"
+                      ? target_return_path
+                      : DATA.bidding_focus === "Install volume"
+                      ? input_bid_path
+                      : target_on_actions;
+
+                  if (
+                    DATA.track_install_volume &&
+                    DATA.bidding_focus !== "Install volume" &&
+                    check_bd_path !== bidding_focus_path_01 &&
+                    DATA.track_install_volume.length > 0
+                  ) {
+                    await driver
+                      .findElement(By.xpath(check_bd_path))
+                      .click()
+                      .then(async () => {
+                        for (const track of DATA.track_install_volume) {
+                          await driver
+                            .findElements(By.className("conversion-action"))
+                            .then(async function (elements) {
+                              for (const el of elements) {
+                                const text = await el.getText();
+
+                                if (text === track) {
+                                  console.log("==========OK==========");
+                                  await el.click();
+                                }
+                              }
+                            });
+                        }
+                      });
+                  }
+                  await driver
+                    .findElement(By.xpath(check_path))
+                    .sendKeys(DATA.bidding)
+                    .then(async () => {
+                      // await driver.sleep(2000);
+                      // handle next button
+                      const next_button_path =
+                        "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                      const condition_04 = until.elementLocated({
+                        xpath: next_button_path,
+                      });
+                      await driver
+                        .wait(condition_04, max_time)
+                        .then(async () => {
+                          await driver
+                            .findElement(By.xpath(next_button_path))
+                            .click()
+                            .then(async () => {
+                              // console.log("OK STEP 3");
+                              await handleStep4(DATA, driver, userId, id);
+                            });
+                        });
+                    });
+                });
             });
         });
     });
