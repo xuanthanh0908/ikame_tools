@@ -5,7 +5,7 @@ const webdriver = require("selenium-webdriver");
 const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
-const { updateStatusCampaign, clearInput } = require("./automate_titktok");
+const { updateStatusCampaign } = require("./automate_titktok");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
@@ -51,79 +51,83 @@ const runTest = catchAsync(async (req, res, next) => {
       driver.manage().window().maximize();
       try {
         await driver.get(DATA.campaign_url);
-        const pageTitle = "New campaign - Amazing Tools - Google Ads";
-        await driver.wait(until.titleIs(pageTitle), maxTime).then(async () => {
-          const app_promote_path =
-            "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
-          await driver.findElement(By.xpath(app_promote_path)).click();
+        const pageTitle = "New campaign";
+        await driver
+          .wait(until.titleContains(pageTitle), maxTime)
+          .then(async () => {
+            const app_promote_path =
+              "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+            await driver.findElement(By.xpath(app_promote_path)).click();
 
-          /// wait for load down components loaded
-          const some_path_loading = "//div[normalize-space()='Android']";
-          const conditions_01 = until.elementLocated({
-            xpath: some_path_loading,
-          });
-          await driver.wait(conditions_01, maxTime).then(async () => {
-            const type_app_path =
-              "//div[normalize-space()='" + DATA.type_app + "']";
-            const app_promote_btn = await driver.findElement(
-              By.xpath(type_app_path)
-            );
-            await driver.executeScript(
-              "arguments[0].click();",
-              app_promote_btn
-            );
-            // search your app
-            const input_search_app =
-              "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/app-selection[1]/div[1]/div[1]/app-picker[1]/div[1]/app-picker-input[1]/div[1]/div[2]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
-            const condition_04 = until.elementLocated({
-              xpath: input_search_app,
+            /// wait for load down components loaded
+            const some_path_loading = "//div[normalize-space()='Android']";
+            const conditions_01 = until.elementLocated({
+              xpath: some_path_loading,
             });
-            await driver.wait(condition_04, maxTime).then(async () => {
-              await driver
-                .findElement({
-                  xpath: input_search_app,
-                })
-                .sendKeys(DATA.package_name)
-                .then(async () => {
-                  const select_app_path =
-                    ".app-info._ngcontent-awn-CM_EDITING-33";
+            await driver.wait(conditions_01, maxTime).then(async () => {
+              const type_app_path =
+                "//div[normalize-space()='" + DATA.type_app + "']";
+              const app_promote_btn = await driver.findElement(
+                By.xpath(type_app_path)
+              );
+              await driver.executeScript(
+                "arguments[0].click();",
+                app_promote_btn
+              );
+              // search your app
+              const input_search_app =
+                "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/app-selection[1]/div[1]/div[1]/app-picker[1]/div[1]/app-picker-input[1]/div[1]/div[2]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+              const condition_04 = until.elementLocated({
+                xpath: input_search_app,
+              });
+              await driver.wait(condition_04, maxTime).then(async () => {
+                await driver
+                  .findElement({
+                    xpath: input_search_app,
+                  })
+                  .sendKeys(DATA.package_name)
+                  .then(async () => {
+                    const select_app_path =
+                      ".app-info._ngcontent-awn-CM_EDITING-33";
 
-                  const conditions_02 = until.elementLocated({
-                    css: select_app_path,
-                  });
-                  await driver.wait(conditions_02, maxTime).then(async () => {
-                    await driver.findElement(By.css(select_app_path)).click();
-
-                    const campaign_name_css_path =
-                      "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
-                    const campaign_input = await driver.findElement(
-                      By.xpath(campaign_name_css_path)
-                    );
-                    campaign_input.clear();
-                    driver.sleep(1000);
-                    campaign_input.sendKeys(DATA.campaign_name);
-
-                    /// next button
-                    const button_next_path =
-                      "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-                    const conditions_03 = until.elementLocated({
-                      xpath: button_next_path,
+                    const conditions_02 = until.elementLocated({
+                      css: select_app_path,
                     });
-                    await driver.wait(conditions_03, maxTime).then(async () => {
-                      const button = await driver.findElement(
-                        By.xpath(button_next_path)
+                    await driver.wait(conditions_02, maxTime).then(async () => {
+                      await driver.findElement(By.css(select_app_path)).click();
+
+                      const campaign_name_css_path =
+                        "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+                      const campaign_input = await driver.findElement(
+                        By.xpath(campaign_name_css_path)
                       );
+                      campaign_input.clear();
+                      driver.sleep(1000);
+                      campaign_input.sendKeys(DATA.campaign_name);
+
+                      /// next button
+                      const button_next_path =
+                        "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                      const conditions_03 = until.elementLocated({
+                        xpath: button_next_path,
+                      });
                       await driver
-                        .executeScript("arguments[0].click()", button)
+                        .wait(conditions_03, maxTime)
                         .then(async () => {
-                          await handleStep2(DATA, driver, userId, id);
+                          const button = await driver.findElement(
+                            By.xpath(button_next_path)
+                          );
+                          await driver
+                            .executeScript("arguments[0].click()", button)
+                            .then(async () => {
+                              await handleStep2(DATA, driver, userId, id);
+                            });
                         });
                     });
                   });
-                });
+              });
             });
           });
-        });
       } finally {
         //
         await driver.sleep(2000);
@@ -135,7 +139,10 @@ const runTest = catchAsync(async (req, res, next) => {
       updateStatusCampaign(id, "canceled", userId);
     });
 });
-
+const clearInput = async (el) => {
+  await el.sendKeys(Key.CONTROL, "a");
+  await el.sendKeys(Key.DELETE);
+};
 const handleStep2 = async (DATA, driver, userId, id) => {
   const max_time = 30000;
   // await driver.sleep(3000);
@@ -272,7 +279,7 @@ const handleStep3 = async (DATA, driver, userId, id) => {
           ? bidding_focus_path_01
           : bidding_focus_path_02;
       const default_recmm_path =
-        "//conversion-action[@class='_nghost-awn-CM_EDITING-138']";
+        "(//div[@class='conversion-action-source _ngcontent-awn-CM_EDITING-138'][normalize-space()='Firebase'])[2]";
       await driver
         .findElement(By.xpath(install_volume_path))
         .click()
@@ -484,25 +491,27 @@ const handleStep6 = async (DATA, driver, userId, id) => {
       await driver
         .executeScript("arguments[0].click()", edit_ads_group_name_path_btn)
         .then(async () => {
-          const input_ads_group_name_path =
-            "(//input[@type='text'])[" +
-            (DATA.location_to_target === "Enter another location"
-              ? (DATA.bidding_focus === "Install volume" ? 8 : 9) +
-                DATA.headline.length +
-                DATA.desc.length
-              : (DATA.bidding_focus === "Install volume" ? 7 : 8) +
-                DATA.headline.length +
-                DATA.desc.length) +
-            "]";
-          const condition_04 = until.elementLocated({
-            xpath: input_ads_group_name_path,
-          });
-          await driver.wait(condition_04, max_time).then(async () => {
-            await clearInput(driver, input_ads_group_name_path).then(
-              async () => {
-                await driver
-                  .findElement(By.xpath(input_ads_group_name_path))
-                  .sendKeys(DATA.ads_group_name);
+          // const input_ads_group_name_path =
+          //   "(//input[@type='text'])[" +
+          //   (DATA.location_to_target === "Enter another location"
+          //     ? (DATA.bidding_focus === "Install volume" ? 8 : 9) +
+          //       DATA.headline.length +
+          //       DATA.desc.length
+          //     : (DATA.bidding_focus === "Install volume" ? 7 : 8) +
+          //       DATA.headline.length +
+          //       DATA.desc.length) +
+          //   "]";
+          // const condition_04 = until.elementLocated({
+          //   xpath: input_ads_group_name_path,
+          // });
+          const input_search_path = "input input-area";
+          await driver
+            .findElements(By.className(input_search_path))
+            .then(async (elements) => {
+              await clearInput(elements[elements.length - 2]).then(async () => {
+                await elements[elements.length - 2].sendKeys(
+                  DATA.ads_group_name
+                );
                 await driver.sleep(5000).then(async () => {
                   await driver
                     .findElements(By.className("button button-next"))
@@ -528,9 +537,8 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                         });
                     });
                 });
-              }
-            );
-          });
+              });
+            });
         });
     });
   } catch (error) {
