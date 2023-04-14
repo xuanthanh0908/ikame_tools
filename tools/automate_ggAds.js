@@ -51,12 +51,18 @@ const runTest = catchAsync(async (req, res, next) => {
       driver.manage().window().maximize();
       try {
         await driver.get(DATA.campaign_url);
-        const pageTitle = "New campaign";
+        const app_promote_path =
+          "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
         await driver
-          .wait(until.titleContains(pageTitle), maxTime)
+          .wait(
+            until.elementLocated({
+              xpath: app_promote_path,
+            }),
+            maxTime
+          )
           .then(async () => {
-            const app_promote_path =
-              "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+            // const app_promote_path =
+            //   "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
             await driver.findElement(By.xpath(app_promote_path)).click();
 
             /// wait for load down components loaded
@@ -278,8 +284,7 @@ const handleStep3 = async (DATA, driver, userId, id) => {
           : DATA.bidding_focus === "Install volume"
           ? bidding_focus_path_01
           : bidding_focus_path_02;
-      const default_recmm_path =
-        "(//div[@class='conversion-action-source _ngcontent-awn-CM_EDITING-138'][normalize-space()='Firebase'])[2]";
+      const default_recmm_path = "//div[normalize-space()='Firebase']";
       await driver
         .findElement(By.xpath(install_volume_path))
         .click()
@@ -334,29 +339,27 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                         }
                       });
                   }
-                  await driver
-                    .findElement(By.xpath(check_path))
-                    .sendKeys(DATA.bidding)
-                    .then(async () => {
-                      // await driver.sleep(2000);
-                      // handle next button
-                      const next_button_path =
-                        "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-                      const condition_04 = until.elementLocated({
-                        xpath: next_button_path,
+                  const split_bidding = DATA.bidding.toString();
+                  for (const bd of split_bidding) {
+                    await driver.findElement(By.xpath(check_path)).sendKeys(bd);
+                  }
+
+                  // await driver.sleep(2000);
+                  // handle next button
+                  const next_button_path =
+                    "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                  const condition_04 = until.elementLocated({
+                    xpath: next_button_path,
+                  });
+                  await driver.wait(condition_04, max_time).then(async () => {
+                    await driver
+                      .findElement(By.xpath(next_button_path))
+                      .click()
+                      .then(async () => {
+                        // console.log("OK STEP 3");
+                        await handleStep4(DATA, driver, userId, id);
                       });
-                      await driver
-                        .wait(condition_04, max_time)
-                        .then(async () => {
-                          await driver
-                            .findElement(By.xpath(next_button_path))
-                            .click()
-                            .then(async () => {
-                              // console.log("OK STEP 3");
-                              await handleStep4(DATA, driver, userId, id);
-                            });
-                        });
-                    });
+                  });
                 });
             });
         });
@@ -482,8 +485,15 @@ const handleStep5 = async (DATA, driver, userId, id) => {
 };
 const handleStep6 = async (DATA, driver, userId, id) => {
   try {
-    const max_time = 30000;
-    await driver.sleep(15000).then(async () => {
+    const max_time = 20000;
+    const max_time_01 = 1000;
+    const wait_for_loading_end_path = "checking-message";
+    // find the element you want to wait for
+    // const element = await driver.findElement(
+    //   By.className(wait_for_loading_end_path)
+    // );
+
+    await driver.sleep(max_time).then(async () => {
       const edit_icon = "(//i[@aria-label='Edit ad group name'])[1]";
       const edit_ads_group_name_path_btn = await driver.findElement(
         By.xpath(edit_icon)
@@ -491,19 +501,6 @@ const handleStep6 = async (DATA, driver, userId, id) => {
       await driver
         .executeScript("arguments[0].click()", edit_ads_group_name_path_btn)
         .then(async () => {
-          // const input_ads_group_name_path =
-          //   "(//input[@type='text'])[" +
-          //   (DATA.location_to_target === "Enter another location"
-          //     ? (DATA.bidding_focus === "Install volume" ? 8 : 9) +
-          //       DATA.headline.length +
-          //       DATA.desc.length
-          //     : (DATA.bidding_focus === "Install volume" ? 7 : 8) +
-          //       DATA.headline.length +
-          //       DATA.desc.length) +
-          //   "]";
-          // const condition_04 = until.elementLocated({
-          //   xpath: input_ads_group_name_path,
-          // });
           const input_search_path = "input input-area";
           await driver
             .findElements(By.className(input_search_path))
@@ -512,18 +509,17 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                 await elements[elements.length - 2].sendKeys(
                   DATA.ads_group_name
                 );
-                await driver.sleep(5000).then(async () => {
+                await driver.sleep(max_time_01).then(async () => {
                   await driver
                     .findElements(By.className("button button-next"))
                     .then(async function (elements) {
-                      console.log("elements", elements.length);
+                      // console.log("elements", elements.length);
                       // Print the text of each element
                       await driver
                         .executeScript(
                           "arguments[0].click()",
                           elements[elements.length - 1]
                         )
-
                         .then(async () => {
                           console.log("RUN TEST SUCCESS");
                           await updateStatusCampaign(
@@ -532,8 +528,9 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                             userId,
                             "Run test success"
                           );
-                          await driver.sleep(30000);
-                          // await driver.quit();
+                          await driver.sleep(max_time).then(async () => {
+                            await driver.quit();
+                          });
                         });
                     });
                 });
