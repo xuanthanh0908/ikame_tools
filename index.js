@@ -10,6 +10,7 @@ const catchAsync = require("./utils/catchAsync");
 const { errorConverter, errorHandler } = require("./utils/error");
 const { socketHandler } = require("./socket");
 const { handleFetchApiGgAds } = require("./tools/automate_ggAds");
+const { handFetchAdsGroup } = require("./tools/automate_add_Asset");
 const Server = socketIo.Server;
 const app = express();
 let server;
@@ -46,9 +47,15 @@ const createCampaignGgAds = catchAsync(async (req, res, next) => {
   await handleFetchApiGgAds(req, res, next);
   res.status(200).send({ message: "success" });
 });
+const automateAdsGroup = catchAsync(async (req, res, next) => {
+  console.log("OK");
+  await handFetchAdsGroup(req, res, next);
+  res.status(200).send({ message: "success" });
+});
 
 app.post("/tool/tiktok", createCampaignTikTok);
 app.post("/tool/google-ads", createCampaignGgAds);
+app.post("/tool/google-ads-group", automateAdsGroup);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

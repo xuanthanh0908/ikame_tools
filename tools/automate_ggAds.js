@@ -6,8 +6,8 @@ const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = "http://localhost:9000/api/v1";
+// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
 };
@@ -31,6 +31,16 @@ const url = {
 //     "https://www.youtube.com/watch?v=IB5rA1QlGnY",
 //   ],
 // };
+const updateAdsGroupCampaign = async (id, url) => {
+  try {
+    await axios.patch(backend_campaign_url + url.CAMPAIGN_UPDATE + "/" + id, {
+      ads_group_url: url,
+    });
+    console.log("update ads group success");
+  } catch (error) {
+    console.log("===========API ERROR=================", error);
+  }
+};
 const runTest = catchAsync(async (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
@@ -529,7 +539,9 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                             "Run test success"
                           );
                           await driver.sleep(max_time).then(async () => {
-                            await driver.quit();
+                            // await driver.quit();
+                            // handle get link create ads group
+                            handleStep7(DATA, driver, userId, id);
                           });
                         });
                     });
@@ -544,6 +556,23 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   }
 };
 
+const handleStep7 = async (DATA, driver, userId, id) => {
+  //
+  const max_time = 30000;
+  /// loading create campaign success
+  const loading_create_campaign_success_path =
+    "(//div[@aria-label='Ad groups'])[1]";
+  const conditions_01 = until.elementLocated({
+    xpath: loading_create_campaign_success_path,
+  });
+  await driver.wait(conditions_01, max_time).then(async () => {
+    const URL = await driver.getCurrentUrl();
+    const update_URL = URL.split("?");
+    const new_ads_group_url =
+      "https://ads.google.com/aw/adgroups/new/universal?" + update_URL[1];
+    await updateAdsGroupCampaign(id, new_ads_group_url);
+  });
+};
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { id } = req.body;
@@ -590,17 +619,17 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
         languages: origin_data.languages,
         budget: origin_data.budget,
         type_app: origin_data.type_app,
-        desc: origin_data.desc[0],
         startDate: {
           date: formattedDate,
           time: "00:00",
         },
-        videos: origin_data.videos,
-        headline: origin_data.texts.flat(1),
+        desc: origin_data.ads_groups[0].desc,
+        videos: origin_data.ads_groups[0].videos,
+        headline: origin_data.ads_groups[0].headline,
+        ads_group_name: origin_data.ads_groups[0].ads_group_name,
         bidding: origin_data.bidding,
-        ads_group_name: origin_data.ads_group_name[0],
       };
-      console.log("==========DATA===========", campaign_data);
+      // console.log("==========DATA===========", campaign_data);
       req.data = campaign_data;
       if (origin_data.status === "pending" || origin_data.status === "canceled")
         runTest(req, res, next);

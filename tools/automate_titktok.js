@@ -638,9 +638,9 @@ const handleFetchApi = catchAsync(async (req, res, next) => {
           date: formattedDate,
           time: "00:00",
         },
-        videos: origin_data.videos,
-        texts: origin_data.texts.flat(1),
-        profile: origin_data.profile,
+        videos: origin_data.ads_groups[0].videos,
+        texts: origin_data.ads_groups[0].headline,
+        // profile: origin_data.profile,
       };
       // console.log("==========DATA===========", campaign_data);
       req.data = campaign_data;
