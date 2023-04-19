@@ -31,16 +31,7 @@ const url = {
 //     "https://www.youtube.com/watch?v=IB5rA1QlGnY",
 //   ],
 // };
-const updateAdsGroupCampaign = async (id, url) => {
-  try {
-    await axios.patch(backend_campaign_url + url.CAMPAIGN_UPDATE + "/" + id, {
-      ads_group_url: url,
-    });
-    console.log("update ads group success");
-  } catch (error) {
-    console.log("===========API ERROR=================", error);
-  }
-};
+
 const runTest = catchAsync(async (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
@@ -539,9 +530,9 @@ const handleStep6 = async (DATA, driver, userId, id) => {
                             "Run test success"
                           );
                           await driver.sleep(max_time).then(async () => {
-                            // await driver.quit();
+                            await driver.quit();
                             // handle get link create ads group
-                            handleStep7(DATA, driver, userId, id);
+                            // handleStep7(DATA, driver, userId, id);
                           });
                         });
                     });
@@ -556,23 +547,23 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   }
 };
 
-const handleStep7 = async (DATA, driver, userId, id) => {
-  //
-  const max_time = 30000;
-  /// loading create campaign success
-  const loading_create_campaign_success_path =
-    "(//div[@aria-label='Ad groups'])[1]";
-  const conditions_01 = until.elementLocated({
-    xpath: loading_create_campaign_success_path,
-  });
-  await driver.wait(conditions_01, max_time).then(async () => {
-    const URL = await driver.getCurrentUrl();
-    const update_URL = URL.split("?");
-    const new_ads_group_url =
-      "https://ads.google.com/aw/adgroups/new/universal?" + update_URL[1];
-    await updateAdsGroupCampaign(id, new_ads_group_url);
-  });
-};
+// const handleStep7 = async (DATA, driver, userId, id) => {
+//   //
+//   const max_time = 30000;
+//   /// loading create campaign success
+//   const loading_create_campaign_success_path =
+//     "(//div[@aria-label='Ad groups'])[1]";
+//   const conditions_01 = until.elementLocated({
+//     xpath: loading_create_campaign_success_path,
+//   });
+//   await driver.wait(conditions_01, max_time).then(async () => {
+//     const URL = await driver.getCurrentUrl();
+//     const update_URL = URL.split("?");
+//     const new_ads_group_url =
+//       "https://ads.google.com/aw/adgroups/new/universal?" + update_URL[1];
+//     await updateAdsGroupCampaign(id, new_ads_group_url);
+//   });
+// };
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { id } = req.body;
@@ -642,4 +633,5 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
 module.exports = {
   runTest,
   handleFetchApiGgAds,
+  clearInput,
 };
