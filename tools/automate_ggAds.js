@@ -6,8 +6,8 @@ const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = "http://localhost:9000/api/v1";
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
 };
