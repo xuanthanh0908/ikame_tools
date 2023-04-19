@@ -184,13 +184,13 @@ const handleStep2 = async (DATA, driver, id, userId) => {
                 const btn_save = await driver
                   .findElements(By.className(save_video_class))
                   .then(async (elements) => {
-                    elements[elements.length - 1].click();
+                    elements[elements.length - 2].click();
                     // // handle next button
                     const next_button_class = "btn btn-yes";
                     await driver
                       .findElements(By.className(next_button_class))
                       .then(async (elements) => {
-                        elements[elements.length - 1].click().then(async () => {
+                        elements[0].click().then(async () => {
                           // finish
                           await driver.sleep(10000).then(async () => {
                             updateAdsGroupCampaign(
