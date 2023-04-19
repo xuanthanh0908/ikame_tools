@@ -180,33 +180,31 @@ const handleStep2 = async (DATA, driver, id, userId) => {
                     });
                 }
                 // handle save choose video
-                const save_video_path =
-                  "(//material-button[@class='confirm-button _nghost-awn-CM_EDITING-11 _ngcontent-awn-CM_EDITING-55'])[1]";
-                const btn_save = await driver.findElement(
-                  By.xpath(save_video_path)
-                );
-                await driver.executeScript("arguments[0].click()", btn_save);
-
-                // // handle next button
-                const next_button_path =
-                  "(//material-button[@class='btn btn-yes _nghost-awn-CM_EDITING-11 _ngcontent-awn-CM_EDITING-10 highlighted'])[1]";
-                const next = await driver.findElement(
-                  By.xpath(next_button_path)
-                );
-                await driver
-                  .executeScript("arguments[0].click()", next)
-                  .then(async () => {
-                    // finish
-                    await driver.sleep(10000).then(async () => {
-                      updateAdsGroupCampaign(
-                        id,
-                        "completed",
-                        userId,
-                        "RUN TEST SUCCESS"
-                      );
-                    });
+                const save_video_class = "confirm-button";
+                const btn_save = await driver
+                  .findElements(By.className(save_video_class))
+                  .then(async (elements) => {
+                    elements[elements.length - 1].click();
+                    // // handle next button
+                    const next_button_class = "btn btn-yes";
+                    await driver
+                      .findElements(By.className(next_button_class))
+                      .then(async (elements) => {
+                        elements[elements.length - 1].click().then(async () => {
+                          // finish
+                          await driver.sleep(10000).then(async () => {
+                            updateAdsGroupCampaign(
+                              id,
+                              "completed",
+                              userId,
+                              "RUN TEST SUCCESS"
+                            );
+                          });
+                        });
+                      });
                   });
               });
+
             // });
           });
         });
