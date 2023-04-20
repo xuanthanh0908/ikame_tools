@@ -6,32 +6,33 @@ const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
+const { emitEvent } = require("../utils/socket");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CAMPAIGN: "/campaign",
+  CAMPAIGN_UPDATE: "/campaign/update-by-one",
 };
 
-// const DATA = {
-//   campaign_url:
-//     "https://ads.google.com/aw/campaigns/new?ocid=1048467088&workspaceId=0&cmpnInfo=%7B%228%22%3A%22a1F49EFB3-26F5-4511-9518-D644D597B9BB--50%22%7D&euid=840505868&__u=5695221932&uscid=1048467088&__c=7066397712&authuser=1",
-//   type_app: "iOS",
-//   app_id: "1659186258",
-//   campaign_name: "Campaign 119",
-//   ads_group_name: "Ads Group Test",
-//   location_type: "Enter another location",
-//   location_target: ["target", "exclude"],
-//   locations: ["United States", "California, United States"],
-//   budget: 5,
-//   bid: 1,
-//   headline: ["Test Headline 01", "Test Headline 02", "Test Headline 03"],
-//   desc: ["Test Desc 01", "Test Desc 02", "Test Desc 03"],
-//   videos: [
-//     "https://www.youtube.com/watch?v=W3ykypuEbnU",
-//     "https://www.youtube.com/watch?v=IB5rA1QlGnY",
-//   ],
-// };
-
+const updateAdsGroupCampaign = async (
+  id,
+  url_campaign,
+  userId,
+  message = "Run test failed"
+) => {
+  try {
+    await axios.patch(backend_campaign_url + url.CAMPAIGN_UPDATE + "/" + id, {
+      ads_group_url: url_campaign,
+    });
+    emitEvent("message", {
+      message,
+      type: "success",
+      userId,
+    });
+  } catch (error) {
+    console.log("===========API ERROR=================", error);
+  }
+};
 const runTest = catchAsync(async (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
@@ -488,11 +489,11 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   try {
     const max_time = 20000;
     const max_time_01 = 1000;
-    const wait_for_loading_end_path = "checking-message";
-    // find the element you want to wait for
-    // const element = await driver.findElement(
-    //   By.className(wait_for_loading_end_path)
-    // );
+    // const wait_for_loading_end_path = "checking-message";
+    // // find the element you want to wait for
+    // // const element = await driver.findElement(
+    // //   By.className(wait_for_loading_end_path)
+    // // );
 
     await driver.sleep(max_time).then(async () => {
       const edit_icon = "(//i[@aria-label='Edit ad group name'])[1]";
@@ -502,53 +503,26 @@ const handleStep6 = async (DATA, driver, userId, id) => {
       await driver
         .executeScript("arguments[0].click()", edit_ads_group_name_path_btn)
         .then(async () => {
-          const input_search_path = "input input-area";
-          await driver
-            .findElements(By.className(input_search_path))
-            .then(async (elements) => {
-              await clearInput(
-                elements[
-                  elements.length -
-                    (DATA.location_to_target === "Enter another location"
-                      ? 2
-                      : 1)
-                ]
-              ).then(async () => {
-                await elements[
-                  elements.length -
-                    (DATA.location_to_target === "Enter another location"
-                      ? 2
-                      : 1)
-                ].sendKeys(DATA.ads_group_name);
-                await driver.sleep(max_time_01).then(async () => {
-                  await driver
-                    .findElements(By.className("button button-next"))
-                    .then(async function (elements) {
-                      // console.log("elements", elements.length);
-                      // Print the text of each element
-                      await driver
-                        .executeScript(
-                          "arguments[0].click()",
-                          elements[elements.length - 1]
-                        )
-                        .then(async () => {
-                          console.log("RUN TEST SUCCESS");
-                          await updateStatusCampaign(
-                            id,
-                            "completed",
-                            userId,
-                            "Run test success"
-                          );
-                          await driver.sleep(max_time).then(async () => {
-                            await driver.quit();
-                            // handle get link create ads group
-                            // handleStep7(DATA, driver, userId, id);
-                          });
-                        });
+          await driver.sleep(max_time_01).then(async () => {
+            await driver
+              .findElements(By.className("button button-next"))
+              .then(async function (elements) {
+                // console.log("elements", elements.length);
+                // Print the text of each element
+                await driver
+                  .executeScript(
+                    "arguments[0].click()",
+                    elements[elements.length - 1]
+                  )
+                  .then(async () => {
+                    await driver.sleep(max_time).then(async () => {
+                      // handle get link create ads group
+                      handleStep7(DATA, driver, userId, id);
                     });
-                });
+                  });
               });
-            });
+          });
+          // });
         });
     });
   } catch (error) {
@@ -557,23 +531,78 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   }
 };
 
-// const handleStep7 = async (DATA, driver, userId, id) => {
-//   //
-//   const max_time = 30000;
-//   /// loading create campaign success
-//   const loading_create_campaign_success_path =
-//     "(//div[@aria-label='Ad groups'])[1]";
-//   const conditions_01 = until.elementLocated({
-//     xpath: loading_create_campaign_success_path,
-//   });
-//   await driver.wait(conditions_01, max_time).then(async () => {
-//     const URL = await driver.getCurrentUrl();
-//     const update_URL = URL.split("?");
-//     const new_ads_group_url =
-//       "https://ads.google.com/aw/adgroups/new/universal?" + update_URL[1];
-//     await updateAdsGroupCampaign(id, new_ads_group_url);
-//   });
-// };
+const handleStep7 = async (DATA, driver, userId, id) => {
+  try {
+    const max_time = 30000;
+    /// loading create campaign success
+    const loading_create_campaign_success_path =
+      "(//div[@aria-label='Ad groups'])[1]";
+    const conditions_01 = until.elementLocated({
+      xpath: loading_create_campaign_success_path,
+    });
+    await driver.wait(conditions_01, max_time).then(async () => {
+      const URL = await driver.getCurrentUrl();
+      const update_URL = URL.split("?");
+      const new_ads_group_url =
+        "https://ads.google.com/aw/adgroups/new/universal?" + update_URL[1];
+
+      const ads_group_edit_path =
+        "//material-button[@aria-label='Edit campaign name']";
+      const conditions_02 = until.elementLocated({
+        xpath: ads_group_edit_path,
+      });
+      await driver.wait(conditions_02, max_time).then(async () => {
+        await driver
+          .findElement(By.xpath(ads_group_edit_path))
+          .click()
+          .then(async () => {
+            // const input_search_path = "//input[@class='input input-area _ngcontent-awn-CM-88']";
+            const input_search_path = "input input-area";
+            await driver
+              .findElements(By.className(input_search_path))
+              .then(async (elements) => {
+                await clearInput(elements[elements.length - 1]).then(
+                  async () => {
+                    elements[elements.length - 1]
+                      .sendKeys(DATA.ads_group_name)
+                      .then(async () => {
+                        const btn_save_class = "btn btn-yes";
+                        await driver
+                          .findElements(By.className(btn_save_class))
+                          .then(async (elements) => {
+                            elements[elements.length - 1]
+                              .click()
+                              .then(async () => {
+                                console.log("RUN TEST SUCCESS");
+                                await updateStatusCampaign(
+                                  id,
+                                  "completed",
+                                  userId,
+                                  "Run test success"
+                                );
+                                await updateAdsGroupCampaign(
+                                  id,
+                                  new_ads_group_url,
+                                  userId,
+                                  "Run test success"
+                                );
+                                await driver.sleep(5000).then(async () => {
+                                  await driver.quit();
+                                });
+                              });
+                          });
+                      });
+                  }
+                );
+              });
+          });
+      });
+    });
+  } catch (error) {
+    console.log("RUN TEST FAILED", error);
+    updateStatusCampaign(id, "canceled", userId);
+  }
+};
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { id } = req.body;
