@@ -506,10 +506,20 @@ const handleStep6 = async (DATA, driver, userId, id) => {
           await driver
             .findElements(By.className(input_search_path))
             .then(async (elements) => {
-              await clearInput(elements[elements.length - 2]).then(async () => {
-                await elements[elements.length - 2].sendKeys(
-                  DATA.ads_group_name
-                );
+              await clearInput(
+                elements[
+                  elements.length -
+                    (DATA.location_to_target === "Enter another location"
+                      ? 2
+                      : 1)
+                ]
+              ).then(async () => {
+                await elements[
+                  elements.length -
+                    (DATA.location_to_target === "Enter another location"
+                      ? 2
+                      : 1)
+                ].sendKeys(DATA.ads_group_name);
                 await driver.sleep(max_time_01).then(async () => {
                   await driver
                     .findElements(By.className("button button-next"))
