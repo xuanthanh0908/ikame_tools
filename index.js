@@ -2,14 +2,20 @@ const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
 const http = require("http");
 const helmet = require("helmet");
 const express = require("express");
-const { handleFetchApi } = require("./tools/automate_titktok");
+const {
+  handleFetchApi,
+  handleMultiFetchApi,
+} = require("./tools/automate_titktok");
 const cors = require("cors");
 const socketIo = require("socket.io");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { errorConverter, errorHandler } = require("./utils/error");
 const { socketHandler } = require("./socket");
-const { handleFetchApiGgAds } = require("./tools/automate_ggAds");
+const {
+  handleFetchApiGgAds,
+  handleFetchMultiApiGgAds,
+} = require("./tools/automate_ggAds");
 const {
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
@@ -43,11 +49,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const createCampaignTikTok = catchAsync(async (req, res, next) => {
-  await handleFetchApi(req, res, next);
+  const { isMulti } = req.body;
+  if (isMulti) {
+    await handleMultiFetchApi(req, res, next);
+  } else await handleFetchApi(req, res, next);
   res.status(200).send({ message: "success" });
 });
 const createCampaignGgAds = catchAsync(async (req, res, next) => {
-  await handleFetchApiGgAds(req, res, next);
+  const { isMulti } = req.body;
+  if (isMulti) {
+    await handleFetchMultiApiGgAds(req, res, next);
+  } else await handleFetchApiGgAds(req, res, next);
   res.status(200).send({ message: "success" });
 });
 
