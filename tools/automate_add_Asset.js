@@ -7,8 +7,8 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { clearInput } = require("./automate_ggAds");
 const { emitEvent } = require("../utils/socket");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = "http://localhost:9000/api/v1";
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   ADSGROUP: "/ads-asset",
 };
@@ -74,7 +74,7 @@ const runTest = (req, res, next) => {
                 .then(async (elements) => {
                   // get length of elements
                   const length_el = elements.length;
-                  const ads_group_name = elements[1];
+                  const ads_group_name = elements[0];
                   // const ads_headline = elements[length_el - 3];
                   // const ads_desc = elements[length_el - 4];
                   // const ads_video = elements[length_el - 1];
