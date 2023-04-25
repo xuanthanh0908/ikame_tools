@@ -7,6 +7,7 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
 const { emitEvent } = require("../utils/socket");
+const fs = require("fs");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
@@ -42,6 +43,7 @@ const clearInput = async (el) => {
 const runTest = async (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
+
   // console.log("=============DATA==============", DATA);
   return new Promise(async (resolve, reject) => {
     readFile()
@@ -58,6 +60,7 @@ const runTest = async (req, res, next) => {
           .setFirefoxOptions(options)
           .build();
         driver.manage().window().maximize();
+        // driver.switchTo().window(driver.getWindowHandle());
         try {
           await driver.get(DATA.campaign_url);
           const app_promote_path =
@@ -468,7 +471,7 @@ const handleStep5 = async (DATA, driver, userId, id) => {
             await driver
               .executeScript("arguments[0].click()", input)
               .then(async () => {
-                await driver.sleep(5000).then(async () => {
+                await driver.sleep(max_time).then(async () => {
                   // const input_search_path =
                   //   "(//input[@type='text'])[" +
                   //   (DATA.location_to_target === "Enter another location"
@@ -597,34 +600,41 @@ const handleStep6 = async (DATA, driver, userId, id) => {
 const handleStep6_1 = async (DATA, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      // const max_time = 30000;
+      const max_time = 30000;
       const btn_img_path = "//material-button[@aria-label='Add images']";
       const findButton = await driver.findElement(By.xpath(btn_img_path));
       await driver
         .executeScript("arguments[0].click()", findButton)
         .then(async () => {
-          const btn_upload_className = "upload-menu";
-          await driver
-            .findElements(By.className(btn_upload_className))
-            .then(async (elements) => {
-              await driver
-                .executeScript(
-                  "arguments[0].click()",
-                  elements[elements.length - 1]
-                )
-                .then(async () => {
-                  const from_pc_class = "menu-item-label";
-                  await driver
-                    .findElements(By.className(from_pc_class))
-                    .then(async (pc) => {
-                      pc[0].click().then(async () => {
-                        handleStep6_2(DATA, pc[0], driver, userId, id)
-                          .then(() => resolve("success"))
-                          .catch(reject);
-                      });
+          await driver.sleep(3000).then(async () => {
+            const btn_upload_className = "upload-menu";
+            await driver
+              .wait(
+                until.elementLocated(By.className(btn_upload_className)),
+                max_time
+              )
+              .then(async () => {
+                await driver
+                  .findElements(By.className(btn_upload_className))
+                  .then(async (elements) => {
+                    // console.log("====CHECK EL====", elements[0]);
+                    elements[0].click().then(async () => {
+                      const from_pc_class = "menu-item-label";
+                      await driver
+                        .findElements(By.className(from_pc_class))
+                        .then(async (pc) => {
+                          // console.log("====CHECK EL====", pc[0]);
+                          // pc[0].click().then(async () => {
+                          handleStep6_2(DATA, pc[0], driver, userId, id)
+                            .then(() => resolve("success"))
+                            .catch(reject);
+                          // });
+                        });
+                      // });
                     });
-                });
-            });
+                  });
+              });
+          });
         });
     } catch (error) {
       reject(error);
@@ -638,48 +648,25 @@ const handleStep6_2 = async (DATA, element, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const max_time = 30000;
-      let JS_DROP_FILE =
-        "var target = arguments[0]," +
-        "    offsetX = arguments[1]," +
-        "    offsetY = arguments[2]," +
-        "    document = target.ownerDocument || document," +
-        "    window = document.defaultView || window;" +
-        "" +
-        "var input = document.createElement('INPUT');" +
-        "input.type = 'file';" +
-        "input.style.display = 'none';" +
-        "input.onchange = function () {" +
-        "  var rect = target.getBoundingClientRect()," +
-        "      x = rect.left + (offsetX || (rect.width >> 1))," +
-        "      y = rect.top + (offsetY || (rect.height >> 1))," +
-        "      dataTransfer = { files: this.files };" +
-        "" +
-        "  ['dragenter', 'dragover', 'drop'].forEach(function (name) {" +
-        "    var evt = document.createEvent('MouseEvent');" +
-        "    evt.initMouseEvent(name, !0, !0, window, 0, 0, 0, x, y, !1, !1, !1, !1, 0, null);" +
-        "    evt.dataTransfer = dataTransfer;" +
-        "    target.dispatchEvent(evt);" +
-        "  });" +
-        "" +
-        "  setTimeout(function () { document.body.removeChild(input); }, 25);" +
-        "};" +
-        "document.body.appendChild(input);" +
-        "return input;";
-      await element
-        .sendKeys("C:\\Users\\hd131\\Downloads\\Others\\*")
-        .then(async () => {
-          handleStep6(DATA, driver, userId, id)
-            .then(() => resolve("success"))
-            .catch(reject);
-        });
-      // driver
-      //   .executeScript(JS_DROP_FILE, element, 0, 0)
-      //   .then(async function (returnValue) {
-      //     returnValue.sendKeys(DATA.images);
-      //     handleStep6(DATA, driver, userId, id)
-      //       .then(() => resolve("success"))
-      //       .catch(reject);
-      //   });
+      const folder_path = "C:\\Users\\hd131\\Downloads\\Others\\2504";
+      const files = fs.readdirSync(folder_path);
+      const filePaths = files.map((file) => `${folder_path}\\${file}`);
+      for (const file of filePaths) {
+        await driver
+          .findElement(By.css("input[type='file']"))
+          .sendKeys(file)
+          .then(async () => {
+            console.log("OK");
+          });
+      }
+      // });
+
+      // .then(async () => {
+      //   handleStep6(DATA, driver, userId, id)
+      //     .then(() => resolve("success"))
+      //     .catch(reject);
+      // });
+      // Submit the file selection dialog
     } catch (error) {
       reject(error);
       console.log("RUN TEST FAILED", error);
@@ -744,10 +731,12 @@ const handleStep7 = async (DATA, driver, userId, id) => {
                                     userId,
                                     "Run test success"
                                   );
-                                  await driver.sleep(5000).then(async () => {
-                                    resolve("success");
-                                    await driver.quit();
-                                  });
+                                  await driver
+                                    .sleep(max_time)
+                                    .then(async () => {
+                                      resolve("success");
+                                      await driver.quit();
+                                    });
                                 });
                             });
                         });
