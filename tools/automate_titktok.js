@@ -691,4 +691,5 @@ module.exports = {
   updateStatusCampaign,
   handleMultiFetchApi,
   clearInput,
+  mouseHoverElement,
 };
