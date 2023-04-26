@@ -163,6 +163,7 @@ const runTest = async (req, res, next) => {
         reject(err);
         console.log("RUN TEST FAILED", err);
         updateStatusCampaign(id, "canceled", userId);
+        updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
       });
   });
 };
@@ -287,6 +288,7 @@ const handleStep2 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -430,6 +432,7 @@ const handleStep3 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -466,6 +469,7 @@ const handleStep4 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -536,6 +540,7 @@ const handleStep5 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -598,6 +603,7 @@ const handleStep6 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -643,6 +649,7 @@ const handleStep6_1 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -681,6 +688,7 @@ const handleStep6_2 = async (DATA, element, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -707,7 +715,14 @@ const handleStep7 = async (DATA, driver, userId, id) => {
           userId,
           "Run test success"
         );
-        await updateStatusCampaign(id, "canceled", userId);
+        await updateStatusCampaign(id, "completed", userId, "RUN TEST SUCCESS");
+        await updateAdsGroupCampaign(
+          id,
+          "completed",
+          userId,
+          "RUN TEST SUCCESS"
+        );
+
         await driver.sleep(5000).then(async () => {
           resolve("success");
           await driver.quit();
@@ -717,6 +732,7 @@ const handleStep7 = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -739,6 +755,7 @@ const nextAction = async (DATA, driver, userId, id) => {
       reject(error);
       console.log("RUN TEST FAILED", error);
       updateStatusCampaign(id, "canceled", userId);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
   });
 };
@@ -793,6 +810,7 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
           time: "00:00",
         },
         desc: origin_data.ads_groups[0].desc,
+        ads_group_id: origin_data.ads_groups[0]._id,
         videos: origin_data.ads_groups[0].videos,
         headline: origin_data.ads_groups[0].headline,
         ads_group_name: origin_data.ads_groups[0].ads_group_name,
@@ -859,6 +877,7 @@ const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
             date: formattedDate,
             time: "00:00",
           },
+          ads_group_id: origin_data.ads_groups[0]._id,
           desc: origin_data.ads_groups[0].desc,
           videos: origin_data.ads_groups[0].videos,
           headline: origin_data.ads_groups[0].headline,

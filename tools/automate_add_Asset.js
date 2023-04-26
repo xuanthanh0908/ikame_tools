@@ -297,4 +297,5 @@ module.exports = {
   runTest,
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
+  updateAdsGroupCampaign,
 };
