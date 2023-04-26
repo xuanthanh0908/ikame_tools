@@ -323,105 +323,109 @@ const handleStep3 = async (DATA, driver, userId, id) => {
             ? bidding_focus_path_01
             : bidding_focus_path_02;
         const default_recmm_path = "//div[normalize-space()='Firebase']";
-        // await driver
-        //   .findElement(By.xpath(install_volume_path))
-        //   .click()
-        //   .then(async () => {
-        //     await driver
-        //       .executeScript(
-        //         "arguments[0].click()",
-        //         await driver.findElement(By.xpath(default_recmm_path))
-        //       )
-        //       .then(async () => {
         await driver
-          .findElement(By.xpath(dropdown_path))
+          .findElement(By.xpath(install_volume_path))
           .click()
           .then(async () => {
-            /// handle send data to bidding field
-            const input_bid_path =
-              "//input[@aria-label='Target cost per install in US Dollar']";
-            const target_return_path =
-              "//input[@aria-label='Target return on ad spend']";
-            const target_on_actions =
-              "//input[@aria-label='Target cost per action in US Dollar']";
-            const check_path =
-              DATA.bidding_focus === "In-app action value"
-                ? target_return_path
-                : DATA.bidding_focus === "Install volume"
-                ? input_bid_path
-                : target_on_actions;
+            await driver
+              .executeScript(
+                "arguments[0].click()",
+                await driver.findElement(By.xpath(default_recmm_path))
+              )
+              .then(async () => {
+                await driver
+                  .findElement(By.xpath(dropdown_path))
+                  .click()
+                  .then(async () => {
+                    /// handle send data to bidding field
+                    const input_bid_path =
+                      "//input[@aria-label='Target cost per install in US Dollar']";
+                    const target_return_path =
+                      "//input[@aria-label='Target return on ad spend']";
+                    const target_on_actions =
+                      "//input[@aria-label='Target cost per action in US Dollar']";
+                    const check_path =
+                      DATA.bidding_focus === "In-app action value"
+                        ? target_return_path
+                        : DATA.bidding_focus === "Install volume"
+                        ? input_bid_path
+                        : target_on_actions;
 
-            if (
-              DATA.track_install_volume &&
-              DATA.bidding_focus !== "Install volume" &&
-              check_bd_path !== bidding_focus_path_01 &&
-              DATA.track_install_volume.length > 0
-            ) {
-              await driver
-                .findElement(By.xpath(check_bd_path))
-                .click()
-                .then(async () => {
-                  for (const track of DATA.track_install_volume) {
-                    await driver
-                      .findElements(By.className("conversion-action"))
-                      .then(async function (elements) {
-                        for (const el of elements) {
-                          const text = await el.getText();
+                    if (
+                      DATA.track_install_volume &&
+                      DATA.bidding_focus !== "Install volume" &&
+                      check_bd_path !== bidding_focus_path_01 &&
+                      DATA.track_install_volume.length > 0
+                    ) {
+                      await driver
+                        .findElement(By.xpath(check_bd_path))
+                        .click()
+                        .then(async () => {
+                          for (const track of DATA.track_install_volume) {
+                            await driver
+                              .findElements(By.className("conversion-action"))
+                              .then(async function (elements) {
+                                for (const el of elements) {
+                                  const text = await el.getText();
 
-                          if (text === track) {
-                            // console.log("==========OK==========");
-                            await el.click();
+                                  if (text === track) {
+                                    // console.log("==========OK==========");
+                                    await el.click();
+                                  }
+                                }
+                              });
                           }
-                        }
-                      });
-                  }
-                });
-            }
-            const split_bidding = DATA.bidding.toString();
-            for (const bd of split_bidding) {
-              await driver.findElement(By.xpath(check_path)).sendKeys(bd);
-            }
+                        });
+                    }
+                    const split_bidding = DATA.bidding.toString();
+                    for (const bd of split_bidding) {
+                      await driver
+                        .findElement(By.xpath(check_path))
+                        .sendKeys(bd);
+                    }
 
-            // await driver.sleep(2000);
-            // handle next button
-            const next_button_path =
-              "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-            const condition_04 = until.elementLocated({
-              xpath: next_button_path,
-            });
-            await driver.wait(condition_04, max_time).then(async () => {
-              await driver
-                .findElement(By.xpath(next_button_path))
-                .click()
-                .then(async () => {
-                  await handleStep4(DATA, driver, userId, id).then(async () => {
-                    // console.log("OK STEP 3");
-                    if (
-                      DATA.videos &&
-                      DATA.videos[0].length > 0 &&
-                      DATA.videos.length > 0
-                    ) {
-                      await handleStep5(DATA, driver, userId, id);
-                      console.log("=====OK 01=====");
-                    }
-                    if (
-                      DATA.images &&
-                      DATA.images[0].length > 0 &&
-                      DATA.images.length > 0
-                    ) {
-                      await handleStep6_1(DATA, driver, userId, id);
-                      console.log("=====OK 02=====");
-                    }
-                    nextAction(DATA, driver, userId, id)
-                      .then(() => resolve("success"))
-                      .catch(reject);
+                    // await driver.sleep(2000);
+                    // handle next button
+                    const next_button_path =
+                      "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                    const condition_04 = until.elementLocated({
+                      xpath: next_button_path,
+                    });
+                    await driver.wait(condition_04, max_time).then(async () => {
+                      await driver
+                        .findElement(By.xpath(next_button_path))
+                        .click()
+                        .then(async () => {
+                          await handleStep4(DATA, driver, userId, id).then(
+                            async () => {
+                              // console.log("OK STEP 3");
+                              if (
+                                DATA.videos &&
+                                DATA.videos[0].length > 0 &&
+                                DATA.videos.length > 0
+                              ) {
+                                await handleStep5(DATA, driver, userId, id);
+                                console.log("=====OK 01=====");
+                              }
+                              if (
+                                DATA.images &&
+                                DATA.images[0].length > 0 &&
+                                DATA.images.length > 0
+                              ) {
+                                await handleStep6_1(DATA, driver, userId, id);
+                                console.log("=====OK 02=====");
+                              }
+                              nextAction(DATA, driver, userId, id)
+                                .then(() => resolve("success"))
+                                .catch(reject);
+                            }
+                          );
+                        });
+                    });
                   });
-                });
-            });
+              });
           });
       });
-      //     });
-      // });
     } catch (error) {
       reject(error);
       console.log("RUN TEST FAILED", error);
