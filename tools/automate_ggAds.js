@@ -314,89 +314,114 @@ const handleStep3 = async (DATA, driver, userId, id) => {
             ? bidding_focus_path_01
             : bidding_focus_path_02
         const default_recmm_path = "//div[normalize-space()='Firebase']"
+        // await driver
+        //   .findElement(By.xpath(install_volume_path))
+        //   .click()
+        //   .then(async () => {
+        // await driver
+        //   .executeScript(
+        //     'arguments[0].click()',
+        //     await driver.findElement(By.xpath(default_recmm_path)),
+        //   )
+        //   .then(async () => {
         await driver
-          .findElement(By.xpath(install_volume_path))
+          .findElement(By.xpath(dropdown_path))
           .click()
           .then(async () => {
-            await driver
-              .executeScript(
-                'arguments[0].click()',
-                await driver.findElement(By.xpath(default_recmm_path)),
-              )
-              .then(async () => {
-                await driver
-                  .findElement(By.xpath(dropdown_path))
-                  .click()
-                  .then(async () => {
-                    /// handle send data to bidding field
-                    const input_bid_path =
-                      "//input[@aria-label='Target cost per install in US Dollar']"
-                    const target_return_path =
-                      "//input[@aria-label='Target return on ad spend']"
-                    const target_on_actions =
-                      "//input[@aria-label='Target cost per action in US Dollar']"
-                    const check_path =
-                      DATA.bidding_focus === 'In-app action value'
-                        ? target_return_path
-                        : DATA.bidding_focus === 'Install volume'
-                        ? input_bid_path
-                        : target_on_actions
+            /// handle send data to bidding field
+            const input_bid_path =
+              "//input[@aria-label='Target cost per install in US Dollar']"
+            const target_return_path =
+              "//input[@aria-label='Target return on ad spend']"
+            const target_on_actions =
+              "//input[@aria-label='Target cost per action in US Dollar']"
+            const check_path =
+              DATA.bidding_focus === 'In-app action value'
+                ? target_return_path
+                : DATA.bidding_focus === 'Install volume'
+                ? input_bid_path
+                : target_on_actions
 
-                    if (
-                      DATA.track_install_volume &&
-                      DATA.bidding_focus !== 'Install volume' &&
-                      check_bd_path !== bidding_focus_path_01 &&
-                      DATA.track_install_volume.length > 0
-                    ) {
-                      await driver
-                        .findElement(By.xpath(check_bd_path))
-                        .click()
-                        .then(async () => {
-                          for (const track of DATA.track_install_volume) {
-                            await driver
-                              .findElements(By.className('conversion-action'))
-                              .then(async function (elements) {
-                                for (const el of elements) {
-                                  const text = await el.getText()
+            if (
+              DATA.track_install_volume &&
+              DATA.bidding_focus !== 'Install volume' &&
+              check_bd_path !== bidding_focus_path_01 &&
+              DATA.track_install_volume.length > 0
+            ) {
+              await driver
+                .findElement(By.xpath(check_bd_path))
+                .click()
+                .then(async () => {
+                  for (const track of DATA.track_install_volume) {
+                    await driver
+                      .findElements(By.className('conversion-action'))
+                      .then(async function (elements) {
+                        for (const el of elements) {
+                          const text = await el.getText()
 
-                                  if (text === track) {
-                                    // console.log("==========OK==========");
-                                    await el.click()
-                                  }
-                                }
-                              })
+                          if (text === track) {
+                            // console.log("==========OK==========");
+                            await el.click()
                           }
-                        })
-                    }
-                    const split_bidding = DATA.bidding.toString()
-                    for (const bd of split_bidding) {
-                      await driver
-                        .findElement(By.xpath(check_path))
-                        .sendKeys(bd)
-                    }
+                        }
+                      })
+                  }
+                })
+            }
+            const split_bidding = DATA.bidding.toString()
+            for (const bd of split_bidding) {
+              await driver.findElement(By.xpath(check_path)).sendKeys(bd)
+            }
 
-                    // await driver.sleep(2000);
-                    // handle next button
-                    const next_button_path =
-                      "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']"
-                    const condition_04 = until.elementLocated({
-                      xpath: next_button_path,
-                    })
-                    await driver.wait(condition_04, max_time).then(async () => {
-                      await driver
-                        .findElement(By.xpath(next_button_path))
-                        .click()
-                        .then(async () => {
-                          // console.log("OK STEP 3");
-                          handleStep4(DATA, driver, userId, id)
+            // await driver.sleep(2000);
+            // handle next button
+            const next_button_path =
+              "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']"
+            const condition_04 = until.elementLocated({
+              xpath: next_button_path,
+            })
+            await driver.wait(condition_04, max_time).then(async () => {
+              await driver
+                .findElement(By.xpath(next_button_path))
+                .click()
+                .then(async () => {
+                  await handleStep4(DATA, driver, userId, id).then(async () => {
+                    // console.log("OK STEP 3");
+                    if (
+                      DATA.videos &&
+                      DATA.videos[0].length > 0 &&
+                      DATA.videos.length > 0
+                    ) {
+                      console.log('=====OK 01=====')
+                      handleStep5(DATA, driver, userId, id)
+                        .then(() => {
+                          nextAction(DATA, driver, userId, id)
                             .then(() => resolve('success'))
                             .catch(reject)
                         })
-                    })
+                        .catch(reject)
+                    }
+                    if (
+                      DATA.images &&
+                      DATA.images[0].length > 0 &&
+                      DATA.images.length > 0
+                    ) {
+                      console.log('=====OK 02=====')
+                      await handleStep6_1(DATA, driver, userId, id)
+                        .then(() => {
+                          nextAction(DATA, driver, userId, id)
+                            .then(() => resolve('success'))
+                            .catch(reject)
+                        })
+                        .catch(reject)
+                    }
                   })
-              })
+                })
+            })
           })
       })
+      // })
+      // })
     } catch (error) {
       reject(error)
       console.log('RUN TEST FAILED', error)
@@ -428,13 +453,10 @@ const handleStep4 = async (DATA, driver, userId, id) => {
             "(//input[@aria-label='Description " + (index + 1) + " of 5'])[1]"
           await driver.findElement(By.xpath(input_des_path)).sendKeys(value)
         }
-        // /// check image or video choose
-        // if(DATA.images.length > 0 && DATA.videos.length > 0){
-        // }
-        // handle choose video
-        handleStep5(DATA, driver, userId, id)
-          .then(() => resolve('success'))
-          .catch(reject)
+        resolve('success')
+        // handleStep5(DATA, driver, userId, id)
+        //   .then(() => resolve('success'))
+        //   .catch(reject)
       })
     } catch (error) {
       reject(error)
@@ -494,24 +516,24 @@ const handleStep5 = async (DATA, driver, userId, id) => {
                       const btn_save = await driver.findElement(
                         By.xpath(save_video_path),
                       )
-                      await driver.executeScript(
-                        'arguments[0].click()',
-                        btn_save,
-                      )
-
-                      // handle next button
-                      const next_button_path =
-                        "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']"
-                      const next = await driver.findElement(
-                        By.xpath(next_button_path),
-                      )
                       await driver
-                        .executeScript('arguments[0].click()', next)
-                        .then(async () => {
-                          handleStep6(DATA, driver, userId, id)
-                            .then(() => resolve('success'))
-                            .catch(reject)
-                        })
+                        .executeScript('arguments[0].click()', btn_save)
+                        .then(() => resolve('success'))
+                        .catch(reject)
+
+                      // // handle next button
+                      // const next_button_path =
+                      //   "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']"
+                      // const next = await driver.findElement(
+                      //   By.xpath(next_button_path),
+                      // )
+                      // await driver
+                      //   .executeScript('arguments[0].click()', next)
+                      //   .then(async () => {
+                      //     handleStep6(DATA, driver, userId, id)
+                      //       .then(() => resolve('success'))
+                      //       .catch(reject)
+                      //   })
                     })
                 })
               })
@@ -576,76 +598,75 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   })
 }
 /// handle choose image
-// const handleStep6_1 = async (DATA, driver, userId, id) => {
-//   return new Promise(async (resolve, reject) => {
-//     try {
-//       const max_time = 30000
-//       const btn_img_path = "//material-button[@aria-label='Add images']"
-//       const findButton = await driver.findElement(By.xpath(btn_img_path))
-//       await driver
-//         .executeScript('arguments[0].click()', findButton)
-//         .then(async () => {
-//           await driver.sleep(3000).then(async () => {
-//             const btn_upload_className = 'upload-menu'
-//             await driver
-//               .wait(
-//                 until.elementLocated(By.className(btn_upload_className)),
-//                 max_time,
-//               )
-//               .then(async () => {
-//                 await driver
-//                   .findElements(By.className(btn_upload_className))
-//                   .then(async (elements) => {
-//                     // console.log("====CHECK EL====", elements[0]);
-//                     elements[0].click().then(async () => {
-//                       const from_pc_class = 'menu-item-label'
-//                       await driver
-//                         .findElements(By.className(from_pc_class))
-//                         .then(async (pc) => {
-//                           // console.log("====CHECK EL====", pc[0]);
-//                           // pc[0].click().then(async () => {
-//                           handleStep6_2(DATA, pc[0], driver, userId, id)
-//                             .then(() => resolve('success'))
-//                             .catch(reject)
-//                           // });
-//                         })
-//                       // });
-//                     })
-//                   })
-//               })
-//           })
-//         })
-//     } catch (error) {
-//       reject(error)
-//       console.log('RUN TEST FAILED', error)
-//       updateStatusCampaign(id, 'canceled', userId)
-//     }
-//   })
-// }
+const handleStep6_1 = async (DATA, driver, userId, id) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const max_time = 30000
+      const btn_img_path = "//material-button[@aria-label='Add images']"
+      const findButton = await driver.findElement(By.xpath(btn_img_path))
+      await driver
+        .executeScript('arguments[0].click()', findButton)
+        .then(async () => {
+          await driver.sleep(3000).then(async () => {
+            const btn_upload_className = 'upload-menu'
+            await driver
+              .wait(
+                until.elementLocated(By.className(btn_upload_className)),
+                max_time,
+              )
+              .then(async () => {
+                await driver
+                  .findElements(By.className(btn_upload_className))
+                  .then(async (elements) => {
+                    // console.log("====CHECK EL====", elements[0]);
+                    elements[0].click().then(async () => {
+                      const from_pc_class = 'menu-item-label'
+                      await driver
+                        .findElements(By.className(from_pc_class))
+                        .then(async (pc) => {
+                          handleStep6_2(DATA, pc[0], driver, userId, id)
+                            .then(() => resolve('success'))
+                            .catch(reject)
+                        })
+                      // });
+                    })
+                  })
+              })
+          })
+        })
+    } catch (error) {
+      reject(error)
+      console.log('RUN TEST FAILED', error)
+      updateStatusCampaign(id, 'canceled', userId)
+    }
+  })
+}
 /// handle choose image
 const handleStep6_2 = async (DATA, element, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const max_time = 30000
-      const folder_path = 'C:\\Users\\hd131\\Downloads\\Others\\2504'
+      const folder_path = DATA.images
       const files = fs.readdirSync(folder_path)
       const filePaths = files.map((file) => `${folder_path}\\${file}`)
       for (const file of filePaths) {
-        await driver
-          .findElement(By.css("input[type='file']"))
-          .sendKeys(file)
-          .then(async () => {
-            console.log('OK')
-          })
+        await driver.findElement(By.css("input[type='file']")).sendKeys(file)
       }
-      // });
-
-      // .then(async () => {
-      //   handleStep6(DATA, driver, userId, id)
-      //     .then(() => resolve("success"))
-      //     .catch(reject);
-      // });
-      // Submit the file selection dialog
+      const confirm_btn_path = "//slidealog-wrapper[@class='_ngcontent-awn-CM_EDITING-56 _nghost-awn-CM_EDITING-57']//div[@class='confirm-button-group _ngcontent-awn-CM_EDITING-56']//material-button[@role='button']"
+      await driver
+        .wait(
+          until.elementLocated({
+            xpath: confirm_btn_path,
+          }),
+          max_time,
+        )
+        .then(async () => {
+          await driver
+            .findElement(By.xpath(confirm_btn_path)).click()
+           
+                .then(() => resolve('success'))
+                .catch(reject)
+        })
     } catch (error) {
       reject(error)
       console.log('RUN TEST FAILED', error)
@@ -733,6 +754,28 @@ const handleStep7 = async (DATA, driver, userId, id) => {
   })
 }
 
+// handle next action
+const nextAction = async (DATA, driver, userId, id) => {
+  // handle next button
+  return new Promise(async (resolve, reject) => {
+    try {
+      const next_button_path =
+        "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']"
+      const next = await driver.findElement(By.xpath(next_button_path))
+      await driver
+        .executeScript('arguments[0].click()', next)
+        .then(async () => {
+          handleStep6(DATA, driver, userId, id)
+            .then(() => resolve('success'))
+            .catch(reject)
+        })
+    } catch (error) {
+      reject(error)
+      console.log('RUN TEST FAILED', error)
+      updateStatusCampaign(id, 'canceled', userId)
+    }
+  })
+}
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { id } = req.body
@@ -790,7 +833,7 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
         bidding: origin_data.bidding,
         images: origin_data.ads_groups[0].images,
       }
-      // console.log("==========DATA===========", campaign_data);
+      // console.log('==========DATA===========', campaign_data)
       req.data = campaign_data
       if (origin_data.status === 'pending' || origin_data.status === 'canceled')
         await runTest(req, res, next)
