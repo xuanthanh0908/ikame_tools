@@ -37,6 +37,9 @@ const updateAdsGroupCampaign = async (
     });
   }
 };
+const campaign_name = "Campaign 0934 __";
+const campaign_url =
+  "https://ads.google.com/aw/campaigns?ocid=1048467088&workspaceId=0&ascid=1048467088&euid=840505868&__u=5695221932&uscid=1048467088&__c=7066397712&authuser=0";
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
@@ -62,7 +65,9 @@ const runTest = (req, res, next) => {
           .build();
         driver.manage().window().maximize();
         try {
-          await driver.get(DATA.ads_group_url);
+          await driver.get(campaign_url);
+          await handleStep1(DATA, driver, userId, id);
+
           const loading_page = "//div[contains(text(),'Ad group name')]";
           await driver
             .wait(
@@ -161,6 +166,69 @@ const runTest = (req, res, next) => {
         console.log("RUN TEST FAILED", err);
         updateAdsGroupCampaign(id, "canceled", userId);
       });
+  });
+};
+/// handle get and choose campaign id
+const handleStep1 = async (DATA, driver, id, userId) => {
+  const max_time = 30000;
+  return new Promise(async (resolve, reject) => {
+    try {
+      const drop_down_path =
+        "(//i[@role='img'][normalize-space()='arrow_drop_down'])[2]";
+      const dropdown = await driver.findElement(By.xpath(drop_down_path));
+      await driver.sleep(5000).then(async () => {
+        driver
+          .executeScript("arguments[0].click();", dropdown)
+          .then(async () => {
+            const input_search_campaign_path = "(//input[@type='text'])[5]";
+            const condition = until.elementLocated({
+              xpath: drop_down_path,
+            });
+            await driver.wait(condition, max_time).then(async () => {
+              await driver
+                .findElement({
+                  xpath: input_search_campaign_path,
+                })
+                .sendKeys(campaign_name)
+                .then(async () => {
+                  await driver.sleep(5000).then(async () => {
+                    const campaign_path =
+                      "//material-select-item[1]//campaign[1]";
+                    const condition = until.elementLocated({
+                      xpath: campaign_path,
+                    });
+                    await driver.wait(condition, max_time).then(async () => {
+                      await driver
+                        .findElement(By.xpath(campaign_path))
+                        .click()
+                        .then(async () => {
+                          const button_add_path =
+                            "//i[normalize-space()='add']";
+                          const condition = until.elementLocated({
+                            xpath: button_add_path,
+                          });
+                          await driver
+                            .wait(condition, max_time)
+                            .then(async () => {
+                              const btn_ads = await driver.findElement(
+                                By.xpath(button_add_path)
+                              );
+                              await driver
+                                .executeScript("arguments[0].click()", btn_ads)
+                                .then(() => resolve("success"));
+                            });
+                        });
+                    });
+                  });
+                });
+            });
+          });
+      });
+    } catch (error) {
+      reject(error);
+      console.log("RUN TEST FAILED", error);
+      updateAdsGroupCampaign(id, "canceled", userId);
+    }
   });
 };
 /// handle choose video youtube
