@@ -182,57 +182,89 @@ const handleStep1 = async (DATA, driver, id, userId) => {
       const condition = until.elementLocated({
         xpath: loading_path,
       });
-
-      await driver.wait(condition, max_time).then(async () => {
-        const dropdown = await driver.findElement(By.xpath(drop_down_path));
+      // handle choose default status ALL
+      const cp_status_drowdown_path = "(//material-chip[@role='row'])[1]";
+      const condition_01 = until.elementLocated({
+        xpath: cp_status_drowdown_path,
+      });
+      await driver.wait(condition_01, max_time).then(async () => {
+        const dropdown_status = await driver.findElement(
+          By.xpath(cp_status_drowdown_path)
+        );
         await driver.sleep(5000).then(async () => {
-          driver
-            .executeScript("arguments[0].click();", dropdown)
+          await driver
+            .executeScript("arguments[0].click();", dropdown_status)
             .then(async () => {
-              const input_search_campaign_path = "(//input[@type='text'])[5]";
-              const condition = until.elementLocated({
-                xpath: drop_down_path,
+              const all_items_path =
+                "//material-select-item[normalize-space()='All']";
+              const condition_02 = until.elementLocated({
+                xpath: all_items_path,
               });
-              await driver.wait(condition, max_time).then(async () => {
-                await driver
-                  .findElement({
-                    xpath: input_search_campaign_path,
-                  })
-                  .sendKeys(DATA.campaign_name)
-                  .then(async () => {
-                    await driver.sleep(5000).then(async () => {
-                      const campaign_path =
-                        "//material-select-item[1]//campaign[1]";
-                      const condition = until.elementLocated({
-                        xpath: campaign_path,
-                      });
-                      await driver.wait(condition, max_time).then(async () => {
+              await driver.wait(condition_02, max_time).then(async () => {
+                await driver.findElement(By.xpath(all_items_path)).click();
+                await driver.wait(condition, max_time).then(async () => {
+                  const dropdown = await driver.findElement(
+                    By.xpath(drop_down_path)
+                  );
+                  await driver.sleep(5000).then(async () => {
+                    driver
+                      .executeScript("arguments[0].click();", dropdown)
+                      .then(async () => {
+                        const input_search_campaign_path =
+                          "(//input[@type='text'])[5]";
+                        const condition = until.elementLocated({
+                          xpath: drop_down_path,
+                        });
                         await driver
-                          .findElement(By.xpath(campaign_path))
-                          .click()
+                          .wait(condition, max_time)
                           .then(async () => {
-                            const button_add_path =
-                              "//i[normalize-space()='add']";
-                            const condition = until.elementLocated({
-                              xpath: button_add_path,
-                            });
                             await driver
-                              .wait(condition, max_time)
+                              .findElement({
+                                xpath: input_search_campaign_path,
+                              })
+                              .sendKeys(DATA.campaign_name)
                               .then(async () => {
-                                const btn_ads = await driver.findElement(
-                                  By.xpath(button_add_path)
-                                );
-                                await driver
-                                  .executeScript(
-                                    "arguments[0].click()",
-                                    btn_ads
-                                  )
-                                  .then(() => resolve("success"));
+                                await driver.sleep(5000).then(async () => {
+                                  const campaign_path =
+                                    "//material-select-item[1]//campaign[1]";
+                                  const condition = until.elementLocated({
+                                    xpath: campaign_path,
+                                  });
+                                  await driver
+                                    .wait(condition, max_time)
+                                    .then(async () => {
+                                      await driver
+                                        .findElement(By.xpath(campaign_path))
+                                        .click()
+                                        .then(async () => {
+                                          const button_add_path =
+                                            "//i[normalize-space()='add']";
+                                          const condition =
+                                            until.elementLocated({
+                                              xpath: button_add_path,
+                                            });
+                                          await driver
+                                            .wait(condition, max_time)
+                                            .then(async () => {
+                                              const btn_ads =
+                                                await driver.findElement(
+                                                  By.xpath(button_add_path)
+                                                );
+                                              await driver
+                                                .executeScript(
+                                                  "arguments[0].click()",
+                                                  btn_ads
+                                                )
+                                                .then(() => resolve("success"));
+                                            });
+                                        });
+                                    });
+                                });
                               });
                           });
                       });
-                    });
                   });
+                });
               });
             });
         });
