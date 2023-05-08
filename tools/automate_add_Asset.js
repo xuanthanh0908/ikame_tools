@@ -1,94 +1,94 @@
-const { Builder, Browser, By, Key, until } = require('selenium-webdriver')
-const axios = require('axios')
-const firefox = require('selenium-webdriver/firefox')
-const webdriver = require('selenium-webdriver')
-const ApiError = require('../utils/apiError')
-const catchAsync = require('../utils/catchAsync')
-const { readFile } = require('../utils/readfile')
-const { emitEvent } = require('../utils/socket')
-const fs = require('fs')
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = 'http://localhost:9000/api/v1'
+const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
+const axios = require("axios");
+const firefox = require("selenium-webdriver/firefox");
+const webdriver = require("selenium-webdriver");
+const ApiError = require("../utils/apiError");
+const catchAsync = require("../utils/catchAsync");
+const { readFile } = require("../utils/readfile");
+const { emitEvent } = require("../utils/socket");
+const fs = require("fs");
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = 'http://localhost:9000/api/v1'
 const url = {
-  ADSGROUP: '/ads-asset',
-}
+  ADSGROUP: "/ads-asset",
+};
 
 const updateAdsGroupCampaign = async (
   id,
   status,
   userId,
-  message = 'Run test failed',
+  message = "Run test failed"
 ) => {
   try {
-    await axios.patch(backend_campaign_url + url.ADSGROUP + '/' + id, {
+    await axios.patch(backend_campaign_url + url.ADSGROUP + "/" + id, {
       status: status,
-    })
-    emitEvent('message', {
+    });
+    emitEvent("message", {
       message,
-      type: 'success',
+      type: "success",
       userId,
-    })
+    });
   } catch (error) {
-    console.log('===========API ERROR=================', error)
-    emitEvent('message', {
+    console.log("===========API ERROR=================", error);
+    emitEvent("message", {
       message,
-      type: 'success',
+      type: "success",
       userId,
-    })
+    });
   }
-}
+};
 /// clear input
 const clearInput = async (el) => {
-  await el.sendKeys(Key.CONTROL, 'a')
-  await el.sendKeys(Key.DELETE)
-}
+  await el.sendKeys(Key.CONTROL, "a");
+  await el.sendKeys(Key.DELETE);
+};
 const runTest = (req, res, next) => {
-  const { id, userId } = req.body
-  const DATA = req.data
+  const { id, userId } = req.body;
+  const DATA = req.data;
   // console.log("=============DATA==============", DATA);
-  const max_time = 30000
+  const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     readFile()
       .then(async (path) => {
         // init maxtime
-        let options = new firefox.Options()
+        let options = new firefox.Options();
 
-        options.setProfile(path)
-        options.setPreference('layout.css.devPixelsPerPx', '0.7')
+        options.setProfile(path);
+        options.setPreference("layout.css.devPixelsPerPx", "0.7");
         //To wait for browser to build and launch properly
         let driver = await new webdriver.Builder()
-          .forBrowser('firefox')
+          .forBrowser("firefox")
           .setFirefoxOptions(options)
-          .build()
-        driver.manage().window().maximize()
+          .build();
+        driver.manage().window().maximize();
         try {
           const res = await axios.get(
             backend_campaign_url +
-              '/config/ads-groups?created_by=' +
+              "/config/ads-groups?created_by=" +
               userId +
-              '&is_default=true',
-          )
-          await driver.get(res.data.data[0].campaign_url)
-          await handleStep1(DATA, driver, userId, id)
+              "&is_default=true"
+          );
+          await driver.get(res.data.data[0].campaign_url);
+          await handleStep1(DATA, driver, userId, id);
 
-          const loading_page = "//div[contains(text(),'Ad group name')]"
+          const loading_page = "//div[contains(text(),'Ad group name')]";
           await driver
             .wait(
               until.elementLocated({
                 xpath: loading_page,
               }),
-              max_time,
+              max_time
             )
             .then(async () => {
               /// wait for load down components loaded
-              const ads_group_name_path = "(//input[@type='text'])[2]"
+              const ads_group_name_path = "(//input[@type='text'])[2]";
               const condition = until.elementLocated({
                 xpath: ads_group_name_path,
-              })
+              });
               await driver.wait(condition, max_time).then(async () => {
                 const ads_group = await driver.findElement(
-                  By.xpath(ads_group_name_path),
-                )
+                  By.xpath(ads_group_name_path)
+                );
                 // console.log("===ads_group=====", ads_group);
                 clearInput(ads_group).then(async () => {
                   await ads_group
@@ -96,10 +96,10 @@ const runTest = (req, res, next) => {
                     .then(async () => {
                       // handle headline
                       const input_headline_path =
-                        "(//input[@aria-label='Headline 1 of 5'])[1]"
+                        "(//input[@aria-label='Headline 1 of 5'])[1]";
                       const conditions_01 = until.elementLocated({
                         xpath: input_headline_path,
-                      })
+                      });
                       await driver
                         .wait(conditions_01, max_time)
                         .then(async () => {
@@ -113,19 +113,19 @@ const runTest = (req, res, next) => {
                             const input_headline_path =
                               "(//input[@aria-label='Headline " +
                               (index + 1) +
-                              " of 5'])[1]"
+                              " of 5'])[1]";
                             await driver
                               .findElement(By.xpath(input_headline_path))
-                              .sendKeys(value)
+                              .sendKeys(value);
                           }
                           for (const [index, value] of DATA.desc.entries()) {
                             const input_des_path =
                               "(//input[@aria-label='Description " +
                               (index + 1) +
-                              " of 5'])[1]"
+                              " of 5'])[1]";
                             await driver
                               .findElement(By.xpath(input_des_path))
-                              .sendKeys(value)
+                              .sendKeys(value);
                           }
 
                           if (
@@ -133,66 +133,66 @@ const runTest = (req, res, next) => {
                             DATA.videos[0]?.length > 0 &&
                             DATA.videos.length > 0
                           ) {
-                            await handleStep2(DATA, driver, userId, id)
-                            console.log('=====OK 01=====')
+                            await handleStep2(DATA, driver, userId, id);
+                            console.log("=====OK 01=====");
                           }
                           if (
                             DATA.images &&
                             DATA.images[0]?.length > 0 &&
                             DATA.images.length > 0
                           ) {
-                            await handleStep3(DATA, driver, userId, id)
-                            console.log('=====OK 02=====')
+                            await handleStep3(DATA, driver, userId, id);
+                            console.log("=====OK 02=====");
                           }
 
                           nextAction(DATA, driver, userId, id)
-                            .then(() => resolve('success'))
-                            .catch(reject)
+                            .then(() => resolve("success"))
+                            .catch(reject);
                           // // console.log("click choose video");
                           // handleStep2(DATA, driver, id, userId)
                           //   .then((e) => {
                           //     resolve(e);
                           //   })
                           //   .catch(reject);
-                        })
-                    })
-                })
-              })
-            })
+                        });
+                    });
+                });
+              });
+            });
         } finally {
           //
-          await driver.sleep(2000)
+          await driver.sleep(2000);
           // driver.quit();
         }
       })
       .catch((err) => {
-        console.log('RUN TEST FAILED', err)
-        updateAdsGroupCampaign(id, 'canceled', userId)
-      })
-  })
-}
+        console.log("RUN TEST FAILED", err);
+        updateAdsGroupCampaign(id, "canceled", userId);
+      });
+  });
+};
 /// handle get and choose campaign id
 const handleStep1 = async (DATA, driver, id, userId) => {
-  const max_time = 30000
+  const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
       const drop_down_path =
-        "(//i[@role='img'][normalize-space()='arrow_drop_down'])[2]"
-      const loading_path = "//span[normalize-space()='Total: Account']"
+        "(//i[@role='img'][normalize-space()='arrow_drop_down'])[2]";
+      const loading_path = "//span[normalize-space()='Total: Account']";
       const condition = until.elementLocated({
         xpath: loading_path,
-      })
+      });
 
       await driver.wait(condition, max_time).then(async () => {
-        const dropdown = await driver.findElement(By.xpath(drop_down_path))
+        const dropdown = await driver.findElement(By.xpath(drop_down_path));
         await driver.sleep(5000).then(async () => {
           driver
-            .executeScript('arguments[0].click();', dropdown)
+            .executeScript("arguments[0].click();", dropdown)
             .then(async () => {
-              const input_search_campaign_path = "(//input[@type='text'])[5]"
+              const input_search_campaign_path = "(//input[@type='text'])[5]";
               const condition = until.elementLocated({
                 xpath: drop_down_path,
-              })
+              });
               await driver.wait(condition, max_time).then(async () => {
                 await driver
                   .findElement({
@@ -202,70 +202,72 @@ const handleStep1 = async (DATA, driver, id, userId) => {
                   .then(async () => {
                     await driver.sleep(5000).then(async () => {
                       const campaign_path =
-                        '//material-select-item[1]//campaign[1]'
+                        "//material-select-item[1]//campaign[1]";
                       const condition = until.elementLocated({
                         xpath: campaign_path,
-                      })
+                      });
                       await driver.wait(condition, max_time).then(async () => {
                         await driver
                           .findElement(By.xpath(campaign_path))
                           .click()
                           .then(async () => {
                             const button_add_path =
-                              "//i[normalize-space()='add']"
+                              "//i[normalize-space()='add']";
                             const condition = until.elementLocated({
                               xpath: button_add_path,
-                            })
+                            });
                             await driver
                               .wait(condition, max_time)
                               .then(async () => {
                                 const btn_ads = await driver.findElement(
-                                  By.xpath(button_add_path),
-                                )
+                                  By.xpath(button_add_path)
+                                );
                                 await driver
                                   .executeScript(
-                                    'arguments[0].click()',
-                                    btn_ads,
+                                    "arguments[0].click()",
+                                    btn_ads
                                   )
-                                  .then(() => resolve('success'))
-                              })
-                          })
-                      })
-                    })
-                  })
-              })
-            })
-        })
-      })
+                                  .then(() => resolve("success"));
+                              });
+                          });
+                      });
+                    });
+                  });
+              });
+            });
+        });
+      });
     } catch (error) {
-      reject(error)
-      console.log('RUN TEST FAILED', error)
-      updateAdsGroupCampaign(id, 'canceled', userId)
+      reject(error);
+      console.log("RUN TEST FAILED", error);
+      updateAdsGroupCampaign(id, "canceled", userId);
     }
-  })
-}
+  });
+};
 /// handle choose video youtube
 const handleStep2 = async (DATA, driver, id, userId) => {
-  const max_time = 30000
+  const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
       // handle choose video
-      const choose_video_path = "//material-button[@aria-label='Add videos']"
-      const choose_video = await driver.findElement(By.xpath(choose_video_path))
+      const choose_video_path = "//material-button[@aria-label='Add videos']";
+      const choose_video = await driver.findElement(
+        By.xpath(choose_video_path)
+      );
       await driver
-        .executeScript('arguments[0].click()', choose_video)
+        .executeScript("arguments[0].click()", choose_video)
         .then(async () => {
-          const loading_path = "//span[normalize-space()='Search YouTube']"
+          const loading_path = "//span[normalize-space()='Search YouTube']";
           const conditions_01 = until.elementLocated({
             xpath: loading_path,
-          })
+          });
           await driver.wait(conditions_01, max_time).then(async () => {
-            const input = await driver.findElement(By.xpath(loading_path))
+            const input = await driver.findElement(By.xpath(loading_path));
             await driver
-              .executeScript('arguments[0].click()', input)
+              .executeScript("arguments[0].click()", input)
               .then(async () => {
                 await driver.sleep(5000).then(async () => {
-                  const input_search_path = 'input input-area'
+                  const input_search_path = "input input-area";
 
                   await driver
                     .findElements(By.className(input_search_path))
@@ -276,29 +278,29 @@ const handleStep2 = async (DATA, driver, id, userId) => {
                           .then(async () => {
                             // console.log("============click search===========");
                             const exist_video_path =
-                              "(//material-list-item[@role='listitem'])[1]"
+                              "(//material-list-item[@role='listitem'])[1]";
                             const conditions_03 = until.elementLocated({
                               xpath: exist_video_path,
-                            })
+                            });
                             await driver
                               .wait(conditions_03, max_time)
                               .then(async () => {
                                 await driver
                                   .findElement(By.xpath(exist_video_path))
-                                  .click()
-                                await elements[elements.length - 1].clear()
-                              })
-                          })
+                                  .click();
+                                await elements[elements.length - 1].clear();
+                              });
+                          });
                       }
                       // handle save choose video
-                      const save_video_class = 'confirm-button'
+                      const save_video_class = "confirm-button";
                       await driver
                         .findElements(By.className(save_video_class))
                         .then(async (elements) => {
                           elements[elements.length - 2]
                             .click()
-                            .then(() => resolve('success'))
-                            .catch(reject)
+                            .then(() => resolve("success"))
+                            .catch(reject);
                           // // // handle next button
                           // const next_button_class = "btn btn-yes";
                           // await driver
@@ -323,38 +325,38 @@ const handleStep2 = async (DATA, driver, id, userId) => {
                           //       });
                           //     });
                           //   });
-                        })
-                    })
+                        });
+                    });
 
                   // });
-                })
-              })
-          })
-        })
+                });
+              });
+          });
+        });
     } catch (error) {
-      reject(error)
-      console.log('RUN TEST FAILED', error)
-      updateAdsGroupCampaign(id, 'canceled', userId)
+      reject(error);
+      console.log("RUN TEST FAILED", error);
+      updateAdsGroupCampaign(id, "canceled", userId);
     }
-  })
-}
+  });
+};
 /// handle choose image
 const handleStep3 = async (DATA, driver, userId, id) => {
   // console.log('CHECK IMAGE')
   return new Promise(async (resolve, reject) => {
     try {
-      const max_time = 30000
-      const btn_img_path = "//material-button[@aria-label='Add images']"
-      const findButton = await driver.findElement(By.xpath(btn_img_path))
+      const max_time = 30000;
+      const btn_img_path = "//material-button[@aria-label='Add images']";
+      const findButton = await driver.findElement(By.xpath(btn_img_path));
       await driver
-        .executeScript('arguments[0].click()', findButton)
+        .executeScript("arguments[0].click()", findButton)
         .then(async () => {
           await driver.sleep(3000).then(async () => {
-            const btn_upload_className = 'upload-menu'
+            const btn_upload_className = "upload-menu";
             await driver
               .wait(
                 until.elementLocated(By.className(btn_upload_className)),
-                max_time,
+                max_time
               )
               .then(async () => {
                 await driver
@@ -362,39 +364,39 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                   .then(async (elements) => {
                     // console.log("====CHECK EL====", elements[0]);
                     elements[0].click().then(async () => {
-                      const from_pc_class = 'menu-item-label'
+                      const from_pc_class = "menu-item-label";
                       await driver
                         .findElements(By.className(from_pc_class))
                         .then(async (pc) => {
                           handleStep4(DATA, pc[0], driver, userId, id)
-                            .then(() => resolve('success'))
-                            .catch(reject)
-                        })
+                            .then(() => resolve("success"))
+                            .catch(reject);
+                        });
                       // });
-                    })
-                  })
-              })
-          })
-        })
+                    });
+                  });
+              });
+          });
+        });
     } catch (error) {
-      reject(error)
-      console.log('RUN TEST FAILED', error)
-      updateAdsGroupCampaign(DATA.ads_group_id, 'canceled', userId)
+      reject(error);
+      console.log("RUN TEST FAILED", error);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
-  })
-}
+  });
+};
 /// handle choose image
 const handleStep4 = async (DATA, element, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const max_time = 30000
-      const folder_path = DATA.images
-      const files = fs.readdirSync(folder_path)
-      const filePaths = files.map((file) => `${folder_path}\\${file}`)
+      const max_time = 30000;
+      const folder_path = DATA.images;
+      const files = fs.readdirSync(folder_path);
+      const filePaths = files.map((file) => `${folder_path}\\${file}`);
       for (const file of filePaths) {
-        await driver.findElement(By.css("input[type='file']")).sendKeys(file)
+        await driver.findElement(By.css("input[type='file']")).sendKeys(file);
       } //material-button[@class='confirm-button _nghost-awn-CM_EDITING-6 _ngcontent-awn-CM_EDITING-118']//material-ripple[@class='_ngcontent-awn-CM_EDITING-6']
-      const confirm_btn_class = 'confirm-button'
+      const confirm_btn_class = "confirm-button";
       // finally, wait for the button to become enabled
       await driver
         .findElements(By.className(confirm_btn_class))
@@ -407,115 +409,115 @@ const handleStep4 = async (DATA, element, driver, userId, id) => {
                 btn[0]
                   .click()
                   .then(() => {
-                    console.log('==========CLICK========')
-                    resolve('success')
+                    console.log("==========CLICK========");
+                    resolve("success");
                   })
-                  .catch(reject)
-              })
-            })
-        })
+                  .catch(reject);
+              });
+            });
+        });
     } catch (error) {
-      reject(error)
-      console.log('RUN TEST FAILED', error)
-      updateAdsGroupCampaign(DATA.ads_group_id, 'canceled', userId)
+      reject(error);
+      console.log("RUN TEST FAILED", error);
+      updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
     }
-  })
-}
+  });
+};
 // handle next action
 const nextAction = async (DATA, driver, userId, id) => {
   // handle next button
   return new Promise(async (resolve, reject) => {
     try {
-      const next_button_class = 'btn btn-yes'
+      const next_button_class = "btn btn-yes";
       await driver
         .findElements(By.className(next_button_class))
         .then(async (elements) => {
           await driver
-            .executeScript('arguments[0].click()', elements[0])
+            .executeScript("arguments[0].click()", elements[0])
             .then(async () => {
               // finish
               await driver.sleep(4000).then(async () => {
                 updateAdsGroupCampaign(
                   id,
-                  'completed',
+                  "completed",
                   userId,
-                  'RUN TEST SUCCESS',
-                )
-              })
+                  "RUN TEST SUCCESS"
+                );
+              });
               await driver.sleep(1000).then(async () => {
                 resolve({
                   status: 200,
-                  message: 'RUN TEST SUCCESS',
-                })
-                await driver.quit()
-              })
-            })
-        })
+                  message: "RUN TEST SUCCESS",
+                });
+                await driver.quit();
+              });
+            });
+        });
     } catch (error) {
-      console.log('RUN TEST FAILED', error)
+      console.log("RUN TEST FAILED", error);
       reject({
         status: 400,
-        message: 'RUN TEST FAILED',
-      })
-      updateAdsGroupCampaign(id, 'canceled', userId)
+        message: "RUN TEST FAILED",
+      });
+      updateAdsGroupCampaign(id, "canceled", userId);
     }
-  })
-}
+  });
+};
 // handle run campaign gg ads
 const handFetchAdsGroup = catchAsync(async (req, res, next) => {
-  const { id } = req.body
+  const { id } = req.body;
   try {
     const response = await axios.get(
-      backend_campaign_url + url.ADSGROUP + '/' + id,
-    )
+      backend_campaign_url + url.ADSGROUP + "/" + id
+    );
     if (response.status === 200) {
-      const origin_data = response.data.data
+      const origin_data = response.data.data;
       // console.log('==========DATA===========', origin_data)
-      req.data = origin_data
-      if (origin_data.status === 'pending' || origin_data.status === 'canceled')
-        await runTest(req, res, next)
-    } else throw new ApiError(400, 'BAD REQUEST')
+      req.data = origin_data;
+      if (origin_data.status === "pending" || origin_data.status === "canceled")
+        await runTest(req, res, next);
+    } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
-    throw new ApiError(400, 'BAD REQUEST')
+    throw new ApiError(400, "BAD REQUEST");
   }
-})
+});
 // handle run multiple campaign ads group
 const handMultiFetchAdsGroup = catchAsync(async (req, res, next) => {
-  const { all_campaign } = req.body
+  const { all_campaign } = req.body;
   // console.log("======ALL CAMPAIGN======", all_campaign);
   try {
-    let index = 0
+    let index = 0;
     while (index < all_campaign.length) {
       // console.log("======ID======", all_campaign[index]);
       const response = await axios.get(
-        backend_campaign_url + url.ADSGROUP + '/' + all_campaign[index],
-      )
+        backend_campaign_url + url.ADSGROUP + "/" + all_campaign[index]
+      );
       req.body = {
         ...req.body,
         id: all_campaign[index],
-      }
+      };
       if (response.status === 200) {
-        const origin_data = response.data.data
+        const origin_data = response.data.data;
         // console.log("==========DATA===========", origin_data);
-        req.data = origin_data
+        req.data = origin_data;
         if (
-          origin_data.status === 'pending' ||
-          origin_data.status === 'canceled'
+          origin_data.status === "pending" ||
+          origin_data.status === "canceled"
         ) {
-          await runTest(req, res, next)
+          await runTest(req, res, next);
         }
-      } else throw new ApiError(400, 'BAD REQUEST')
-      index++
+      } else throw new ApiError(400, "BAD REQUEST");
+      index++;
     }
   } catch (error) {
-    console.log('======ERROR======', error)
-    throw new ApiError(400, 'BAD REQUEST')
+    console.log("======ERROR======", error);
+    throw new ApiError(400, "BAD REQUEST");
   }
-})
+});
 // runTest();
 module.exports = {
   runTest,
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
   updateAdsGroupCampaign,
-}
+};
