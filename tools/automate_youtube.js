@@ -7,15 +7,34 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = "http://localhost:9000/api/v1";
-// const url = {
-//   ADSGROUP: "/ads-asset",
-// };
-const DATA = {
-  video_path: "C:\\Users\\hd131\\Downloads\\Video",
-  playlist: "Test 03",
-  channel: "nunmoon",
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
+const url = {
+  YOUTUBE: "/youtube",
+};
+const updateCreativeYTB = async (
+  id,
+  status,
+  userId,
+  message = "Run test failed"
+) => {
+  try {
+    await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, {
+      status: status,
+    });
+    emitEvent("message", {
+      message,
+      type: "success",
+      userId,
+    });
+  } catch (error) {
+    console.log("===========API ERROR=================", error);
+    emitEvent("message", {
+      message,
+      type: "success",
+      userId,
+    });
+  }
 };
 /// clear input
 const clearInput = async (el) => {
@@ -23,9 +42,9 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.DELETE);
 };
 
-const run_Now = () => {
-  //   const { id, userId } = req.body
-  //   const DATA = req.data
+const run_Now = (req, res, next) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
   // console.log("=============DATA==============", DATA);
   const max_time = 70000;
   return new Promise(async (resolve, reject) => {
@@ -70,12 +89,10 @@ const run_Now = () => {
                             .findElement(By.xpath(pathItem))
                             .getText()
                             .then(async (text) => {
-                              if (text === DATA.channel) {
+                              if (text === DATA.channel_name) {
                                 await element.click().then(async () => {
-                                  await handeleStep_02(driver)
-                                    .then(() =>
-                                      resolve("Run test successfully")
-                                    )
+                                  handeleStep_02(DATA, driver, req, res, next)
+                                    .then(() => resolve("success"))
                                     .catch(reject);
                                 });
                               }
@@ -85,20 +102,21 @@ const run_Now = () => {
                   });
                 });
             });
-        } finally {
-          //
-          await driver.sleep(2000);
-          // driver.quit();
+        } catch (error) {
+          reject(error);
         }
       })
       .catch((err) => {
+        reject(err);
+        updateCreativeYTB(id, "canceled", userId);
         console.log("RUN TEST FAILED", err);
         // updateAdsGroupCampaign(id, 'canceled', userId)
       });
   });
 };
 // handle read video path && run consequent
-const handeleStep_02 = async (driver) => {
+const handeleStep_02 = async (DATA, driver, req, res, next) => {
+  const { id, userId } = req.body;
   // Upload
   return new Promise(async (resolve, reject) => {
     try {
@@ -106,17 +124,27 @@ const handeleStep_02 = async (driver) => {
       const title = files.map((file) => file);
       const filePaths = files.map((file) => `${DATA.video_path}\\${file}`);
       for (const [index, filePath] of filePaths.entries()) {
-        await handeleStep_03(driver, filePath, title[index])
-          .then(() => resolve("Run test successfully"))
+        handeleStep_03(DATA, driver, filePath, title[index], req, res, next)
+          .then(() => resolve("success"))
           .catch(reject);
       }
     } catch (error) {
+      updateCreativeYTB(id, "canceled", userId);
       reject(error);
     }
   });
 };
 // handle upload video
-const handeleStep_03 = async (driver, file_path, title_) => {
+const handeleStep_03 = async (
+  DATA,
+  driver,
+  file_path,
+  title_,
+  req,
+  res,
+  next
+) => {
+  const { id, userId } = req.body;
   const max_time = 40000;
   return new Promise(async (resolve, reject) => {
     try {
@@ -159,7 +187,7 @@ const handeleStep_03 = async (driver, file_path, title_) => {
               );
               await playlist.click().then(async () => {
                 const find_playlist_name =
-                  "//span[contains(text(),'" + DATA.playlist + "')]";
+                  "//span[contains(text(),'" + DATA.playlist_name + "')]";
                 const condition_03 = until.elementLocated({
                   xpath: find_playlist_name,
                 });
@@ -209,7 +237,11 @@ const handeleStep_03 = async (driver, file_path, title_) => {
                   await driver
                     .findElement(By.xpath(btn_close_process_path))
                     .click()
-                    .then(() => resolve("Run test successfully"))
+                    .then(async () => {
+                      updateCreativeYTB(id, "completed", userId);
+                      resolve("success");
+                      await driver.quit();
+                    })
                     .catch(reject);
                 });
               });
@@ -217,10 +249,32 @@ const handeleStep_03 = async (driver, file_path, title_) => {
           });
       });
     } catch (error) {
+      updateCreativeYTB(id, "canceled", userId);
       console.log(error);
       reject(error);
     }
   });
 };
 
+const handleFetchData = async (req, res, next) => {
+  const { id } = req.body;
+  try {
+    const response = await axios.get(
+      backend_campaign_url + url.YOUTUBE + "/" + id
+    );
+    if (response.status === 200) {
+      const origin_data = response.data.data;
+      // console.log("==========DATA===========", origin_data);
+      req.data = origin_data;
+      if (origin_data.status === "pending" || origin_data.status === "canceled")
+        await run_Now(req, res, next);
+    } else throw new ApiError(400, "BAD REQUEST");
+  } catch (error) {
+    throw new ApiError(400, "BAD REQUEST");
+  }
+};
 // run_Now();
+
+module.exports = {
+  handleFetchData,
+};

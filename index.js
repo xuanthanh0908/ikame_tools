@@ -20,6 +20,7 @@ const {
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
 } = require("./tools/automate_add_Asset");
+const { handleFetchData } = require("./tools/automate_youtube");
 const Server = socketIo.Server;
 const app = express();
 let server;
@@ -64,18 +65,24 @@ const createCampaignGgAds = catchAsync(async (req, res, next) => {
 });
 
 const automateAdsGroup = catchAsync(async (req, res, next) => {
-  // console.log("OK");
-  // console.log("====== req.body=========", req.body);
   const { isMulti } = req.body;
   if (isMulti) {
     await handMultiFetchAdsGroup(req, res, next);
   } else await handFetchAdsGroup(req, res, next);
   res.status(200).send({ message: "success" });
 });
+const automateCreativeYoutube = catchAsync(async (req, res, next) => {
+  const { isMulti } = req.body;
+  res.status(200).send({ message: "success" });
+  if (isMulti) {
+    // await handMultiFetchAdsGroup(req, res, next);
+  } else await handleFetchData(req, res, next);
+});
 
 app.post("/tool/tiktok", createCampaignTikTok);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
+app.post("/tool/creative-youtube", automateCreativeYoutube);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

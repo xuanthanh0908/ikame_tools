@@ -792,7 +792,7 @@ const handleStep7 = async (DATA, driver, userId, id) => {
         xpath: loading_create_campaign_success_path,
       });
       await driver.wait(conditions_01, max_time).then(async () => {
-        const ads_group_edit_path = "pencil-icon";
+        const ads_group_edit_path = "ess-edit-icon";
         const conditions_02 = until.elementLocated({
           className: ads_group_edit_path,
         });
@@ -803,6 +803,7 @@ const handleStep7 = async (DATA, driver, userId, id) => {
           await driver
             .executeScript("arguments[0].click();", icon)
             .then(async () => {
+              // /html[1]/body[1]/div[5]/div[1]/string-lens-edit[1]/focus-trap[1]/div[2]/material-input[1]/div[1]/div[1]/label[1]/input[1]
               const input_ads_group_path =
                 "/html[1]/body[1]/div[7]/div[1]/string-lens-edit[1]/focus-trap[1]/div[2]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
               const condition_03 = until.elementLocated({
