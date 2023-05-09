@@ -346,7 +346,8 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                 : DATA.bidding_focus === "Install volume"
                 ? input_bid_path
                 : target_on_actions;
-
+            const default_rec_path = "//div[normalize-space()='Firebase']";
+            await driver.findElement(By.xpath(default_rec_path)).click();
             if (
               DATA.track_install_volume &&
               DATA.bidding_focus !== "Install volume" &&
