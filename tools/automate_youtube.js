@@ -3,24 +3,25 @@ const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
 const ApiError = require("../utils/apiError");
-const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = "http://localhost:9000/api/v1";
+// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   YOUTUBE: "/youtube",
 };
 const updateCreativeYTB = async (
   id,
   status,
+  youtube_url = null,
   userId,
   message = "Run test failed"
 ) => {
   try {
     await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, {
       status: status,
+      ...(youtube_url && { youtube_url: youtube_url }),
     });
     emitEvent("message", {
       message,
@@ -120,14 +121,28 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
   // Upload
   return new Promise(async (resolve, reject) => {
     try {
+      let videos = [];
       const files = fs.readdirSync(DATA.video_path);
       const title = files.map((file) => file);
       const filePaths = files.map((file) => `${DATA.video_path}\\${file}`);
       for (const [index, filePath] of filePaths.entries()) {
-        handeleStep_03(DATA, driver, filePath, title[index], req, res, next)
-          .then(() => resolve("success"))
-          .catch(reject);
+        await handeleStep_03(
+          DATA,
+          driver,
+          filePath,
+          title[index],
+          videos,
+          req,
+          res,
+          next
+        );
       }
+
+      await driver.sleep(2000).then(async () => {
+        updateCreativeYTB(id, "completed", videos, userId);
+        resolve("success");
+        await driver.quit();
+      });
     } catch (error) {
       updateCreativeYTB(id, "canceled", userId);
       reject(error);
@@ -140,6 +155,7 @@ const handeleStep_03 = async (
   driver,
   file_path,
   title_,
+  videos,
   req,
   res,
   next
@@ -204,6 +220,8 @@ const handeleStep_03 = async (
                   await driver.findElement(By.xpath(btn_done_path)).click();
                 });
               });
+
+              /////////////////////////////
               // handle choose options - for children
               const options_path = "(//div[@id='radioLabel'])[2]";
               await driver.findElement(By.xpath(options_path)).click();
@@ -215,6 +233,22 @@ const handeleStep_03 = async (
                   await driver.findElement(By.xpath(btn_next_path)).click();
                 });
               }
+
+              ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
+              const url_className =
+                ".style-scope.ytcp-video-info[target='_blank']";
+              await driver
+                .wait(until.elementLocated(By.css(url_className)), max_time)
+                .then(async () => {
+                  const url = await driver
+                    .findElement(By.css(url_className))
+                    .getAttribute("href");
+                  videos.push({
+                    file_name: title_,
+                    url: url,
+                  });
+                });
+
               const save_or_pb_unlisted_path =
                 "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
               const condition_04 = until.elementLocated({
@@ -237,11 +271,12 @@ const handeleStep_03 = async (
                   await driver
                     .findElement(By.xpath(btn_close_process_path))
                     .click()
-                    .then(async () => {
-                      updateCreativeYTB(id, "completed", userId);
-                      resolve("success");
-                      await driver.quit();
-                    })
+                    .then(async () => resolve("success"))
+                    // .then(async () => {
+                    //   updateCreativeYTB(id, "completed", userId);
+                    //   resolve("success");
+                    //   await driver.quit();
+                    // })
                     .catch(reject);
                 });
               });
