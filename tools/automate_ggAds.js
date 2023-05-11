@@ -255,9 +255,13 @@ const handleStep2 = async (DATA, driver, userId, id) => {
               .click()
               .then(async () => {
                 // enable language
-                const input_language =
-                  "/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[2]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/reconstruction-base-root[1]/view-loader[1]/universal-campaign-flow-root[1]/base-campaign-flow-root[1]/left-stepper[1]/div[1]/div[1]/div[1]/dynamic-component[1]/layout-driven-view[1]/construction-layout[1]/div[1]/construction-layout-engine[1]/div[1]/div[1]/div[3]/div[3]/lazy-plugin[1]/div[1]/dynamic-component[1]/languages[1]/material-expansionpanel[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/language-picker[1]/section[1]/div[1]/language-selector[1]/div[1]/material-auto-suggest-input[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
-                await driver.findElement(By.xpath(input_language)).click();
+                // input[placeholder="Start typing or select a language"]'
+                const input_language = "input input-area";
+                await driver
+                  .findElements(By.className(input_language))
+                  .then(async (elements) => {
+                    await elements[1].click();
+                  });
 
                 // choose language
                 if (DATA.languages.length > 0 && DATA.languages[0] !== "All") {
@@ -299,6 +303,150 @@ const handleStep2 = async (DATA, driver, userId, id) => {
     }
   });
 };
+// handle bidding && budget
+// const handleStep3 = async (DATA, driver, userId, id) => {
+//   // console.log("=================STEP 3===================", DATA);
+//   return new Promise(async (resolve, reject) => {
+//     try {
+//       const max_time = 30000;
+//       const input_budget_path =
+//         "//input[@aria-label='Set your average daily budget for this campaign']";
+//       const conditions_01 = until.elementLocated({
+//         xpath: input_budget_path,
+//       });
+//       await driver.wait(conditions_01, max_time).then(async () => {
+//         const input_budget = await driver.findElement(
+//           By.xpath(input_budget_path)
+//         );
+//         await input_budget.sendKeys(DATA.budget);
+//         /// handle choose bidding focus
+//         const install_volume_path =
+//           "//material-dropdown-select[@aria-label='How do you want to track install volume?']";
+//         const bidding_focus_path_01 = "//div[normalize-space()='Install volume";
+//         const bidding_focus_path_02 =
+//           "//div[normalize-space()='In-app actions']";
+//         const bidding_focus_path_03 =
+//           "//div[normalize-space()='In-app action value']";
+//         const dropdown_path =
+//           "//material-dropdown-select[@aria-label='What do you want to focus on?']";
+//         const check_bd_path =
+//           DATA.bidding_focus === "In-app action value"
+//             ? bidding_focus_path_03
+//             : DATA.bidding_focus === "Install volume"
+//             ? bidding_focus_path_01
+//             : bidding_focus_path_02;
+//         const default_recmm_path = "//div[normalize-space()='Firebase']";
+//         await driver
+//           .findElement(By.xpath(install_volume_path))
+//           .click()
+//           .then(async () => {
+//             await driver
+//               .executeScript(
+//                 "arguments[0].click()",
+//                 await driver.findElement(By.xpath(default_recmm_path))
+//               )
+//               .then(async () => {
+//                 await driver
+//                   .findElement(By.xpath(dropdown_path))
+//                   .click()
+//                   .then(async () => {
+//                     /// handle send data to bidding field
+//                     const input_bid_path =
+//                       "//input[@aria-label='Target cost per install in US Dollar']";
+//                     const target_return_path =
+//                       "//input[@aria-label='Target return on ad spend']";
+//                     const target_on_actions =
+//                       "//input[@aria-label='Target cost per action in US Dollar']";
+//                     const check_path =
+//                       DATA.bidding_focus === "In-app action value"
+//                         ? target_return_path
+//                         : DATA.bidding_focus === "Install volume"
+//                         ? input_bid_path
+//                         : target_on_actions;
+
+//                     if (
+//                       DATA.track_install_volume &&
+//                       DATA.bidding_focus !== "Install volume" &&
+//                       check_bd_path !== bidding_focus_path_01 &&
+//                       DATA.track_install_volume.length > 0
+//                     ) {
+//                       await driver
+//                         .findElement(By.xpath(check_bd_path))
+//                         .click()
+//                         .then(async () => {
+//                           for (const track of DATA.track_install_volume) {
+//                             await driver
+//                               .findElements(By.className("conversion-action"))
+//                               .then(async function (elements) {
+//                                 for (const el of elements) {
+//                                   const text = await el.getText();
+
+//                                   if (text === track) {
+//                                     console.log("==========OK==========");
+//                                     await el.click();
+//                                   }
+//                                 }
+//                               });
+//                           }
+//                         });
+//                     }
+//                     const split_bidding = DATA.bidding.toString();
+//                     for (const bd of split_bidding) {
+//                       await driver
+//                         .findElement(By.xpath(check_path))
+//                         .sendKeys(bd);
+//                     }
+
+//                     // await driver.sleep(2000);
+//                     // handle next button
+//                     const next_button_path =
+//                       "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+//                     const condition_04 = until.elementLocated({
+//                       xpath: next_button_path,
+//                     });
+//                     await driver.wait(condition_04, max_time).then(async () => {
+//                       await driver
+//                         .findElement(By.xpath(next_button_path))
+//                         .click()
+//                         .then(async () => {
+//                           await handleStep4(DATA, driver, userId, id).then(
+//                             async () => {
+//                               // console.log("OK STEP 3");
+//                               if (
+//                                 DATA.videos &&
+//                                 DATA.videos[0].length > 0 &&
+//                                 DATA.videos.length > 0
+//                               ) {
+//                                 await handleStep5(DATA, driver, userId, id);
+//                                 console.log("=====OK 01=====");
+//                               }
+//                               if (
+//                                 DATA.images &&
+//                                 DATA.images[0].length > 0 &&
+//                                 DATA.images.length > 0
+//                               ) {
+//                                 await handleStep6_1(DATA, driver, userId, id);
+//                                 console.log("=====OK 02=====");
+//                               }
+//                               nextAction(DATA, driver, userId, id)
+//                                 .then(() => resolve("success"))
+//                                 .catch(reject);
+//                             }
+//                           );
+//                         });
+//                     });
+//                   });
+//               });
+//           });
+//       });
+//     } catch (error) {
+//       reject(error);
+//       console.log("RUN TEST FAILED", error);
+//       updateStatusCampaign(id, "canceled", userId);
+//       updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
+//     }
+//   });
+// };
 // handle bidding && budget
 const handleStep3 = async (DATA, driver, userId, id) => {
   // console.log("=================STEP 3===================", DATA);
@@ -359,7 +507,6 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                         : DATA.bidding_focus === "Install volume"
                         ? input_bid_path
                         : target_on_actions;
-
                     if (
                       DATA.track_install_volume &&
                       DATA.bidding_focus !== "Install volume" &&
@@ -376,9 +523,8 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                               .then(async function (elements) {
                                 for (const el of elements) {
                                   const text = await el.getText();
-
                                   if (text === track) {
-                                    console.log("==========OK==========");
+                                    // console.log("==========OK==========");
                                     await el.click();
                                   }
                                 }
@@ -392,7 +538,6 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                         .findElement(By.xpath(check_path))
                         .sendKeys(bd);
                     }
-
                     // await driver.sleep(2000);
                     // handle next button
                     const next_button_path =
@@ -618,28 +763,32 @@ const handleStep6 = async (DATA, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const max_time = 30000;
-      await driver.sleep(max_time).then(async () => {
+      await driver.sleep(3000).then(async () => {
         // handle get link create ads group
+        const btn_next_path = "button button-next";
         await driver
-          .findElements(By.className("button button-next"))
-          .then(async function (elements) {
-            // console.log("elements", elements.length);
-            // Print the text of each element
+          .wait(
+            until.elementsLocated({
+              className: btn_next_path,
+            }),
+            max_time
+          )
+          .then(async () => {
             await driver
-              .wait(
-                until.elementIsVisible(elements[elements.length - 1]),
-                max_time
-              )
-              .then(async () => {
+              .findElements(By.className(btn_next_path))
+              .then(async function (elements) {
+                // console.log("elements", elements.length);
+                // Print the text of each element
                 await driver
-                  .executeScript(
-                    "arguments[0].click()",
-                    elements[elements.length - 1]
-                  )
+                  .wait(until.elementIsVisible(elements[3]), max_time)
                   .then(async () => {
-                    handleStep7(DATA, driver, userId, id)
-                      .then(() => resolve("success"))
-                      .catch(reject);
+                    await driver
+                      .executeScript("arguments[0].click()", elements[3])
+                      .then(async () => {
+                        handleStep7(DATA, driver, userId, id)
+                          .then(() => resolve("success"))
+                          .catch(reject);
+                      });
                   });
               });
           });
@@ -792,14 +941,12 @@ const handleStep7 = async (DATA, driver, userId, id) => {
         xpath: loading_create_campaign_success_path,
       });
       await driver.wait(conditions_01, max_time).then(async () => {
-        const ads_group_edit_path = "ess-edit-icon";
+        const ads_group_edit_path = "edit-panel-icon material-button";
         const conditions_02 = until.elementLocated({
-          className: ads_group_edit_path,
+          css: ads_group_edit_path,
         });
         await driver.wait(conditions_02, max_time).then(async () => {
-          const icon = await driver.findElement(
-            By.className(ads_group_edit_path)
-          );
+          const icon = await driver.findElement(By.css(ads_group_edit_path));
           await driver
             .executeScript("arguments[0].click();", icon)
             .then(async () => {

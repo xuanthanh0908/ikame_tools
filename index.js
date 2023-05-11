@@ -21,6 +21,10 @@ const {
   handMultiFetchAdsGroup,
 } = require("./tools/automate_add_Asset");
 const { handleFetchData } = require("./tools/automate_youtube");
+const {
+  handFetchCreativePlaylist,
+  handMultiFetchCreativePlaylist,
+} = require("./tools/automate_addPlaylist");
 const Server = socketIo.Server;
 const app = express();
 let server;
@@ -78,8 +82,16 @@ const automateCreativeYoutube = catchAsync(async (req, res, next) => {
     // await handMultiFetchAdsGroup(req, res, next);
   } else await handleFetchData(req, res, next);
 });
+const automateCreativePlaylist = catchAsync(async (req, res, next) => {
+  const { isMulti } = req.body;
+  res.status(200).send({ message: "success" });
+  if (isMulti) {
+    await handMultiFetchCreativePlaylist(req, res, next);
+  } else await handFetchCreativePlaylist(req, res, next);
+});
 
 app.post("/tool/tiktok", createCampaignTikTok);
+app.post("/tool/playlist", automateCreativePlaylist);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
 app.post("/tool/creative-youtube", automateCreativeYoutube);

@@ -7,26 +7,23 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = 'http://localhost:9000/api/v1'
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
-  ADSGROUP: "/ads-asset",
+  CREATIVE: "/playlist",
 };
-const DATA = {
-  channel_name: "nunmoon",
-  playlist_name: "Test 03",
-  videos: ["10 06 DiCSM T React03 916"],
-  choose_date: "10-05-2023",
-  range_max_date: "24h",
-};
-const updateCreativeURLCampaign = async (
+// const DATA = {
+//   channel_name: "nunmoon",
+//   playlists: ["Maybe I made mistake", "10 06 DiCSM T React03 917"],
+// };
+const updateCreativePlaylistCampaign = async (
   id,
   status,
   userId,
   message = "Run test failed"
 ) => {
   try {
-    await axios.patch(backend_campaign_url + url.ADSGROUP + "/" + id, {
+    await axios.patch(backend_campaign_url + url.CREATIVE + "/" + id, {
       status: status,
     });
     emitEvent("message", {
@@ -43,14 +40,10 @@ const updateCreativeURLCampaign = async (
     });
   }
 };
-/// clear input
-const clearInput = async (el) => {
-  await el.sendKeys(Key.CONTROL, "a");
-  await el.sendKeys(Key.DELETE);
-};
-const runTest = () => {
-  // const { id, userId } = req.body;
-  // const DATA = req.data;
+
+const runTest = (req, res, next) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
   // console.log("=============DATA==============", DATA);
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
@@ -98,7 +91,7 @@ const runTest = () => {
                             .then(async (text) => {
                               if (text === DATA.channel_name) {
                                 await element.click().then(async () => {
-                                  handleStep2(driver)
+                                  handleStep2(driver, req, res, next)
                                     .then(() => resolve("success"))
                                     .catch(reject);
                                 });
@@ -117,64 +110,101 @@ const runTest = () => {
       })
       .catch((err) => {
         console.log("RUN TEST FAILED", err);
-        // updateCreativeURLCampaign(id, "canceled", userId);
+        updateCreativePlaylistCampaign(id, "canceled", userId);
       });
   });
 };
-/// handle select playlist
-const handleStep2 = async (driver) => {
+///
+const handleStep2 = async (driver, req, res, next) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
-      const content_tab_path = "";
-      const filterIcon_path = "//tp-yt-iron-icon[@id='filter-icon']";
-      const byTilte_path =
-        "(//yt-formatted-string[normalize-space()='Title'])[1]";
-      // wait for filter icon load
+      const btn_create_path = "//div[contains(text(),'Create')]";
       await driver
-        .wait(until.elementLocated(By.xpath(filterIcon_path)), max_time)
+        .wait(until.elementLocated(By.xpath(btn_create_path)), max_time)
         .then(async () => {
-          /// wait for dropdown load
-          await driver
-            .wait(until.elementLocated(By.xpath(byTilte_path)), max_time)
-            .then(async () => {
-              // click filter by title
-              await driver.findElement(By.xpath(byTilte_path)).click();
-              const input_path =
-                "//input[@class='style-scope tp-yt-paper-input']";
-              await driver
-                .wait(until.elementLocated(By.xpath(input_path)), max_time)
-                .then(async () => {
-                  const input_value = await driver.findElement(
-                    By.xpath(input_path)
-                  );
-                  input_value.sendKeys(DATA.videos[0]);
-                  await driver.sleep(1000).then(async () => {
-                    const apply_path =
-                      "//div[@class='label style-scope ytcp-button'][normalize-space()='Apply']";
-                    await driver.findElement(By.xpath(apply_path)).click();
+          const find_btn = await driver.findElement(By.xpath(btn_create_path));
+          await find_btn.click().then(async () => {
+            const btn_create_playlist_path =
+              "//yt-formatted-string[normalize-space()='New playlist']";
+            await driver
+              .wait(
+                until.elementLocated(By.xpath(btn_create_playlist_path)),
+                max_time
+              )
+              .then(async () => {
+                await driver
+                  .findElement(By.xpath(btn_create_playlist_path))
+                  .click();
+                const wait_dialig_path =
+                  "//div[contains(@class,'header-title style-scope ytcp-playlist-creation-dialog')]";
+                await driver
+                  .wait(
+                    until.elementLocated(By.xpath(wait_dialig_path)),
+                    max_time
+                  )
+                  .then(async () => {
+                    const input_title_classname =
+                      '#container-content ytcp-social-suggestion-input div[aria-label="Add title"]';
+                    await driver
+                      .findElement(By.css(input_title_classname))
+                      .sendKeys(DATA.playlist_name);
+
+                    const drop_down_path =
+                      "//div[contains(@class,'has-label container style-scope ytcp-dropdown-trigger style-scope ytcp-dropdown-trigger')]//tp-yt-iron-icon[contains(@class,'style-scope ytcp-dropdown-trigger')]";
+                    await driver
+                      .findElement(By.xpath(drop_down_path))
+                      .click()
+                      .then(async () => {
+                        await driver
+                          .findElement(
+                            By.xpath(
+                              "//yt-formatted-string[normalize-space()='Unlisted']"
+                            )
+                          )
+                          .click();
+                      });
+
+                    const btn_create_path =
+                      "//ytcp-button[@id='create-button']//div[contains(@class,'label style-scope ytcp-button')][normalize-space()='Create']";
+                    await driver.findElement(By.xpath(btn_create_path)).click();
+                    const is_created_path = wait_dialig_path;
+                    const find_toast = await driver.findElement(
+                      By.xpath(is_created_path)
+                    );
+                    await driver
+                      .wait(until.elementIsNotVisible(find_toast), max_time)
+                      .then(async () => {
+                        console.log("=====CREATE PLAYLIST SUCCESS=====");
+                        updateCreativePlaylistCampaign(id, "completed", userId);
+                        resolve("success");
+                        await driver.quit();
+                      })
+                      .catch(reject);
                   });
-                });
-            });
+              });
+          });
         });
     } catch (error) {
       reject(error);
       console.log("RUN TEST FAILED", error);
-      // updateCreativeURLCampaign(id, "canceled", userId);
+      updateCreativePlaylistCampaign(id, "canceled", userId);
     }
   });
 };
 
 // handle run campaign gg ads
-const handFetchCreativeURL = catchAsync(async (req, res, next) => {
+const handFetchCreativePlaylist = catchAsync(async (req, res, next) => {
   const { id } = req.body;
   try {
     const response = await axios.get(
-      backend_campaign_url + url.ADSGROUP + "/" + id
+      backend_campaign_url + url.CREATIVE + "/" + id
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
-      // console.log('==========DATA===========', origin_data)
+      // console.log("==========DATA===========", origin_data);
       req.data = origin_data;
       if (origin_data.status === "pending" || origin_data.status === "canceled")
         await runTest(req, res, next);
@@ -184,7 +214,7 @@ const handFetchCreativeURL = catchAsync(async (req, res, next) => {
   }
 });
 // handle run multiple campaign ads group
-const handMultiFetchCreativeURL = catchAsync(async (req, res, next) => {
+const handMultiFetchCreativePlaylist = catchAsync(async (req, res, next) => {
   const { all_campaign } = req.body;
   // console.log("======ALL CAMPAIGN======", all_campaign);
   try {
@@ -192,7 +222,7 @@ const handMultiFetchCreativeURL = catchAsync(async (req, res, next) => {
     while (index < all_campaign.length) {
       // console.log("======ID======", all_campaign[index]);
       const response = await axios.get(
-        backend_campaign_url + url.ADSGROUP + "/" + all_campaign[index]
+        backend_campaign_url + url.CREATIVE + "/" + all_campaign[index]
       );
       req.body = {
         ...req.body,
@@ -216,10 +246,9 @@ const handMultiFetchCreativeURL = catchAsync(async (req, res, next) => {
     throw new ApiError(400, "BAD REQUEST");
   }
 });
-runTest();
+// runTest();
 module.exports = {
   runTest,
-  handFetchCreativeURL,
-  handMultiFetchCreativeURL,
-  updateCreativeURLCampaign,
+  handFetchCreativePlaylist,
+  handMultiFetchCreativePlaylist,
 };

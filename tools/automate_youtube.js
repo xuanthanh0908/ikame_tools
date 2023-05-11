@@ -6,8 +6,8 @@ const ApiError = require("../utils/apiError");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = "http://localhost:9000/api/v1";
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   YOUTUBE: "/youtube",
 };
@@ -24,7 +24,7 @@ const updateCreativeYTB = async (
       ...(youtube_url && { youtube_url: youtube_url }),
     });
     emitEvent("message", {
-      message,
+      message: "run test success",
       type: "success",
       userId,
     });
@@ -32,7 +32,7 @@ const updateCreativeYTB = async (
     console.log("===========API ERROR=================", error);
     emitEvent("message", {
       message,
-      type: "success",
+      type: "run test failed",
       userId,
     });
   }
@@ -132,17 +132,22 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
           filePath,
           title[index],
           videos,
+          index,
+          filePaths.length,
           req,
           res,
           next
-        );
+        )
+          .then(() => resolve("success"))
+          .catch(reject);
+        // if(index === 0) {
+        //   await driver.sleep(2000).then(async () => {
+        //     updateCreativeYTB(id, "completed", videos, userId);
+        //     resolve("success");
+        //     await driver.quit();
+        //   });
+        // }
       }
-
-      await driver.sleep(2000).then(async () => {
-        updateCreativeYTB(id, "completed", videos, userId);
-        resolve("success");
-        await driver.quit();
-      });
     } catch (error) {
       updateCreativeYTB(id, "canceled", userId);
       reject(error);
@@ -156,6 +161,8 @@ const handeleStep_03 = async (
   file_path,
   title_,
   videos,
+  index,
+  count,
   req,
   res,
   next
@@ -272,11 +279,13 @@ const handeleStep_03 = async (
                     .findElement(By.xpath(btn_close_process_path))
                     .click()
                     .then(async () => resolve("success"))
-                    // .then(async () => {
-                    //   updateCreativeYTB(id, "completed", userId);
-                    //   resolve("success");
-                    //   await driver.quit();
-                    // })
+                    .then(async () => {
+                      resolve("success");
+                      if (index === count - 1) {
+                        updateCreativeYTB(id, "completed", videos, userId);
+                        await driver.quit();
+                      }
+                    })
                     .catch(reject);
                 });
               });

@@ -176,8 +176,7 @@ const handleStep1 = async (DATA, driver, id, userId) => {
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
-      const drop_down_path =
-        "(//i[@role='img'][normalize-space()='arrow_drop_down'])[2]";
+      const drop_down_path = ".button-content material-icon";
       const loading_path = "//span[normalize-space()='Total: Account']";
       const condition = until.elementLocated({
         xpath: loading_path,
@@ -188,6 +187,10 @@ const handleStep1 = async (DATA, driver, id, userId) => {
         xpath: cp_status_drowdown_path,
       });
       await driver.wait(condition_01, max_time).then(async () => {
+        /// handle change account
+
+        /// handle change game - app
+
         const dropdown_status = await driver.findElement(
           By.xpath(cp_status_drowdown_path)
         );
@@ -204,37 +207,37 @@ const handleStep1 = async (DATA, driver, id, userId) => {
                 await driver.findElement(By.xpath(all_items_path)).click();
                 await driver.wait(condition, max_time).then(async () => {
                   const dropdown = await driver.findElement(
-                    By.xpath(drop_down_path)
+                    By.css(drop_down_path)
                   );
                   await driver.sleep(5000).then(async () => {
                     driver
                       .executeScript("arguments[0].click();", dropdown)
                       .then(async () => {
                         const input_search_campaign_path =
-                          "(//input[@type='text'])[5]";
+                          ".search-input .input-container .input.input-area";
                         const condition = until.elementLocated({
-                          xpath: drop_down_path,
+                          css: drop_down_path,
                         });
                         await driver
                           .wait(condition, max_time)
                           .then(async () => {
                             await driver
                               .findElement({
-                                xpath: input_search_campaign_path,
+                                css: input_search_campaign_path,
                               })
                               .sendKeys(DATA.campaign_name)
                               .then(async () => {
                                 await driver.sleep(5000).then(async () => {
-                                  const campaign_path =
-                                    "//material-select-item[1]//campaign[1]";
+                                  const campaign_css =
+                                    "material-list span + material-select-dropdown-item";
                                   const condition = until.elementLocated({
-                                    xpath: campaign_path,
+                                    css: campaign_css,
                                   });
                                   await driver
                                     .wait(condition, max_time)
                                     .then(async () => {
                                       await driver
-                                        .findElement(By.xpath(campaign_path))
+                                        .findElement(By.css(campaign_css))
                                         .click()
                                         .then(async () => {
                                           const button_add_path =
