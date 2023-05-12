@@ -183,29 +183,29 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
   return new Promise(async (resolve, reject) => {
     try {
       /// handle change account
-      const avatar_css = "deferred-component img";
-      const condition_03 = until.elementLocated({
-        css: avatar_css,
-      });
-      await driver.wait(condition_03, max_time).then(async () => {
-        await driver.findElement(By.css(avatar_css)).click();
-        const id_class = "pretty-customer-id";
-        const condition_04 = until.elementLocated({
-          className: id_class,
-        });
-        await driver.wait(condition_04, max_time).then(async () => {
-          await driver
-            .findElements(By.className(id_class))
-            .then(async (els) => {
-              for (const el of els) {
-                const text = await el.getText();
-                if (text === id_game_app) {
-                  await el.click();
-                }
-              }
-            });
-        });
-      });
+      // const avatar_css = "deferred-component img";
+      // const condition_03 = until.elementLocated({
+      //   css: avatar_css,
+      // });
+      // await driver.wait(condition_03, max_time).then(async () => {
+      //   await driver.findElement(By.css(avatar_css)).click();
+      //   const id_class = "pretty-customer-id";
+      //   const condition_04 = until.elementLocated({
+      //     className: id_class,
+      //   });
+      //   await driver.wait(condition_04, max_time).then(async () => {
+      //     await driver
+      //       .findElements(By.className(id_class))
+      //       .then(async (els) => {
+      //         for (const el of els) {
+      //           const text = await el.getText();
+      //           if (text === id_game_app) {
+      //             await el.click();
+      //           }
+      //         }
+      //       });
+      //   });
+      // });
       const drop_down_path = ".button-content material-icon";
       const loading_path = "//span[normalize-space()='Total: Account']";
       const condition = until.elementLocated({
