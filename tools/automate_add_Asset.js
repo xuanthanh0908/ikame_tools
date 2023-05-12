@@ -69,7 +69,13 @@ const runTest = (req, res, next) => {
               "&is_default=true"
           );
           await driver.get(res.data.data[0].campaign_url);
-          await handleStep1(DATA, driver, userId, id);
+          await handleStep1(
+            DATA,
+            driver,
+            userId,
+            id,
+            res.data.data[0].id_game_app
+          );
 
           const loading_page = "//div[contains(text(),'Ad group name')]";
           await driver
@@ -172,10 +178,34 @@ const runTest = (req, res, next) => {
   });
 };
 /// handle get and choose campaign id
-const handleStep1 = async (DATA, driver, id, userId) => {
+const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
+      /// handle change account
+      const avatar_css = "deferred-component img";
+      const condition_03 = until.elementLocated({
+        css: avatar_css,
+      });
+      await driver.wait(condition_03, max_time).then(async () => {
+        await driver.findElement(By.css(avatar_css)).click();
+        const id_class = "pretty-customer-id";
+        const condition_04 = until.elementLocated({
+          className: id_class,
+        });
+        await driver.wait(condition_04, max_time).then(async () => {
+          await driver
+            .findElements(By.className(id_class))
+            .then(async (els) => {
+              for (const el of els) {
+                const text = await el.getText();
+                if (text === id_game_app) {
+                  await el.click();
+                }
+              }
+            });
+        });
+      });
       const drop_down_path = ".button-content material-icon";
       const loading_path = "//span[normalize-space()='Total: Account']";
       const condition = until.elementLocated({
@@ -187,10 +217,6 @@ const handleStep1 = async (DATA, driver, id, userId) => {
         xpath: cp_status_drowdown_path,
       });
       await driver.wait(condition_01, max_time).then(async () => {
-        /// handle change account
-
-        /// handle change game - app
-
         const dropdown_status = await driver.findElement(
           By.xpath(cp_status_drowdown_path)
         );
