@@ -180,6 +180,7 @@ const runTest = (req, res, next) => {
 /// handle get and choose campaign id
 const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
   const max_time = 30000;
+  const soft_time = 500;
   return new Promise(async (resolve, reject) => {
     try {
       /// handle change account
@@ -220,7 +221,7 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
         const dropdown_status = await driver.findElement(
           By.xpath(cp_status_drowdown_path)
         );
-        await driver.sleep(5000).then(async () => {
+        await driver.sleep(soft_time).then(async () => {
           await driver
             .executeScript("arguments[0].click();", dropdown_status)
             .then(async () => {
@@ -235,7 +236,7 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
                   const dropdown = await driver.findElement(
                     By.css(drop_down_path)
                   );
-                  await driver.sleep(5000).then(async () => {
+                  await driver.sleep(soft_time).then(async () => {
                     driver
                       .executeScript("arguments[0].click();", dropdown)
                       .then(async () => {
@@ -253,7 +254,7 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
                               })
                               .sendKeys(DATA.campaign_name)
                               .then(async () => {
-                                await driver.sleep(5000).then(async () => {
+                                await driver.sleep(soft_time).then(async () => {
                                   const campaign_css =
                                     "material-list span + material-select-dropdown-item";
                                   const condition = until.elementLocated({
@@ -307,6 +308,7 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
 };
 /// handle choose video youtube
 const handleStep2 = async (DATA, driver, id, userId) => {
+  const soft_time = 1000;
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
     try {
@@ -327,7 +329,7 @@ const handleStep2 = async (DATA, driver, id, userId) => {
             await driver
               .executeScript("arguments[0].click()", input)
               .then(async () => {
-                await driver.sleep(5000).then(async () => {
+                await driver.sleep(soft_time).then(async () => {
                   const input_search_path = "input input-area";
 
                   await driver

@@ -6,16 +6,11 @@ const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
-const fs = require("fs");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   CREATIVE: "/playlist",
 };
-// const DATA = {
-//   channel_name: "nunmoon",
-//   playlists: ["Maybe I made mistake", "10 06 DiCSM T React03 917"],
-// };
 const updateCreativePlaylistCampaign = async (
   id,
   status,

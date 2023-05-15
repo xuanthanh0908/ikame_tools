@@ -21,6 +21,15 @@ async function socketHandler(connectingSockets) {
         socket.to(connectedSocket[userId]).emit("update", message);
       }
     });
+    // socket listener for update progress step upload youtube
+    socket.on("progress-ytb", async (data) => {
+      console.log("=========== UPDATE PROGRESS YOUTUBE ============", data);
+      if (connectedSocket[data.created_by]) {
+        socket
+          .to(connectedSocket[data.created_by])
+          .emit("update-progress-ytb", data);
+      }
+    });
     // socket listener for disconnect
     socket.on("disconnect", () => {
       console.log("Client disconnected");

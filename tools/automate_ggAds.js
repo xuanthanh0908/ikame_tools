@@ -630,6 +630,7 @@ const handleStep5 = async (DATA, driver, userId, id) => {
   // console.log('CHECK VIDEO')
   return new Promise(async (resolve, reject) => {
     try {
+      const soft_time = 1000;
       const max_time = 30000;
       const choose_video_path =
         "//material-button[@aria-label='Add videos']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
@@ -648,7 +649,7 @@ const handleStep5 = async (DATA, driver, userId, id) => {
             await driver
               .executeScript("arguments[0].click()", input)
               .then(async () => {
-                await driver.sleep(max_time).then(async () => {
+                await driver.sleep(soft_time).then(async () => {
                   const input_search_path = "input input-area";
                   await driver
                     .findElements(By.className(input_search_path))

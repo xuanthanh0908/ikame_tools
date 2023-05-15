@@ -1,4 +1,3 @@
-const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
 const http = require("http");
 const helmet = require("helmet");
 const express = require("express");
@@ -20,7 +19,10 @@ const {
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
 } = require("./tools/automate_add_Asset");
-const { handleFetchData } = require("./tools/automate_youtube");
+const {
+  handleFetchData,
+  handMultiFetchYTB,
+} = require("./tools/automate_youtube");
 const {
   handFetchCreativePlaylist,
   handMultiFetchCreativePlaylist,
@@ -79,7 +81,7 @@ const automateCreativeYoutube = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   res.status(200).send({ message: "success" });
   if (isMulti) {
-    // await handMultiFetchAdsGroup(req, res, next);
+    await handMultiFetchYTB(req, res, next);
   } else await handleFetchData(req, res, next);
 });
 const automateCreativePlaylist = catchAsync(async (req, res, next) => {

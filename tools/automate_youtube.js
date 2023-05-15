@@ -11,6 +11,20 @@ const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 const url = {
   YOUTUBE: "/youtube",
 };
+// handle update status
+const updateCreative = async (
+  id,
+  data,
+  userId,
+  message = "Run test failed"
+) => {
+  try {
+    await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
+  } catch (error) {
+    console.log("===========API ERROR=================", error);
+  }
+};
+// handle update status
 const updateCreativeYTB = async (
   id,
   status,
@@ -42,12 +56,11 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
-
+// handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
   // console.log("=============DATA==============", DATA);
-  const max_time = 70000;
   return new Promise(async (resolve, reject) => {
     readFile()
       .then(async (path) => {
@@ -138,15 +151,18 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
           res,
           next
         )
-          .then(() => resolve("success"))
+          .then(async () => {
+            resolve("success");
+            const data = {
+              _id: id,
+              current_progress: index + 1,
+              total_progress: filePaths.length,
+              created_by: userId,
+            };
+            emitEvent("progress-ytb", data);
+            await updateCreative(id, data, userId);
+          })
           .catch(reject);
-        // if(index === 0) {
-        //   await driver.sleep(2000).then(async () => {
-        //     updateCreativeYTB(id, "completed", videos, userId);
-        //     resolve("success");
-        //     await driver.quit();
-        //   });
-        // }
       }
     } catch (error) {
       updateCreativeYTB(id, "canceled", userId);
@@ -300,6 +316,7 @@ const handeleStep_03 = async (
   });
 };
 
+// handle run single creative youtube
 const handleFetchData = async (req, res, next) => {
   const { id } = req.body;
   try {
@@ -317,8 +334,42 @@ const handleFetchData = async (req, res, next) => {
     throw new ApiError(400, "BAD REQUEST");
   }
 };
+// handle run multiple creative youtube
+const handMultiFetchYTB = async (req, res, next) => {
+  const { all_campaign } = req.body;
+  // console.log("======ALL CAMPAIGN======", all_campaign);
+  try {
+    let index = 0;
+    while (index < all_campaign.length) {
+      // console.log("======ID======", all_campaign[index]);
+      const response = await axios.get(
+        backend_campaign_url + url.YOUTUBE + "/" + all_campaign[index]
+      );
+      req.body = {
+        ...req.body,
+        id: all_campaign[index],
+      };
+      if (response.status === 200) {
+        const origin_data = response.data.data;
+        // console.log("==========DATA===========", origin_data);
+        req.data = origin_data;
+        if (
+          origin_data.status === "pending" ||
+          origin_data.status === "canceled"
+        ) {
+          await run_Now(req, res, next);
+        }
+      } else throw new ApiError(400, "BAD REQUEST");
+      index++;
+    }
+  } catch (error) {
+    console.log("======ERROR======", error);
+    throw new ApiError(400, "BAD REQUEST");
+  }
+};
 // run_Now();
 
 module.exports = {
   handleFetchData,
+  handMultiFetchYTB,
 };
