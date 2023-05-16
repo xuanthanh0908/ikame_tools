@@ -123,9 +123,16 @@ const runTest = async (req, res, next) => {
                           // const campaign_input = await driver.findElement(
                           //   By.xpath(campaign_name_css_path),
                           // )
-                          elements[2].clear();
-                          driver.sleep(1000);
-                          elements[2].sendKeys(DATA.campaign_name);
+                          const input_camp_name = ".campaign-name-view .input.input-area"
+                          const condition_05 = until.elementLocated({ 
+                            css: input_camp_name,
+                          })
+                          await driver.wait(condition_05, maxTime).then(async () => {
+                            const input = await driver.findElement(By.css(input_camp_name))
+                            await clearInput(input)
+                            await input.sendKeys(DATA.campaign_name)
+                          })
+                          
 
                           /// next button
                           const button_next_path =
