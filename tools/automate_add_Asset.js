@@ -208,9 +208,9 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
       //   });
       // });
       const drop_down_path = ".button-content material-icon";
-      const loading_path = "//span[normalize-space()='Total: Account']";
+      const loading_path = "mat-checkbox";
       const condition = until.elementLocated({
-        xpath: loading_path,
+        tagName: loading_path,
       });
       // handle choose default status ALL
       const cp_status_drowdown_path = "(//material-chip[@role='row'])[1]";
