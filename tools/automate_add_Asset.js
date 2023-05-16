@@ -491,6 +491,7 @@ const nextAction = async (DATA, driver, userId, id) => {
   // handle next button
   return new Promise(async (resolve, reject) => {
     try {
+      const soft_time = 1000;
       const next_button_class = "btn btn-yes";
       await driver
         .findElements(By.className(next_button_class))
@@ -499,7 +500,7 @@ const nextAction = async (DATA, driver, userId, id) => {
             .executeScript("arguments[0].click()", elements[0])
             .then(async () => {
               // finish
-              await driver.sleep(4000).then(async () => {
+              await driver.sleep(soft_time).then(async () => {
                 updateAdsGroupCampaign(
                   id,
                   "completed",
@@ -507,7 +508,7 @@ const nextAction = async (DATA, driver, userId, id) => {
                   "RUN TEST SUCCESS"
                 );
               });
-              await driver.sleep(1000).then(async () => {
+              await driver.sleep(soft_time).then(async () => {
                 resolve({
                   status: 200,
                   message: "RUN TEST SUCCESS",

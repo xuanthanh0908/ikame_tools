@@ -950,15 +950,14 @@ const handleStep7 = async (DATA, driver, userId, id) => {
           await driver
             .executeScript("arguments[0].click();", icon)
             .then(async () => {
-              // /html[1]/body[1]/div[5]/div[1]/string-lens-edit[1]/focus-trap[1]/div[2]/material-input[1]/div[1]/div[1]/label[1]/input[1]
-              const input_ads_group_path =
-                "/html[1]/body[1]/div[7]/div[1]/string-lens-edit[1]/focus-trap[1]/div[2]/material-input[1]/div[1]/div[1]/label[1]/input[1]";
+              const input_ads_group_css =
+                "string-lens-edit label > .input.input-area";
               const condition_03 = until.elementLocated({
-                xpath: input_ads_group_path,
+                css: input_ads_group_css,
               });
               await driver.wait(condition_03, max_time).then(async () => {
                 const input_ads_name = await driver.findElement(
-                  By.xpath(input_ads_group_path)
+                  By.css(input_ads_group_css)
                 );
                 await clearInput(input_ads_name).then(async () => {
                   input_ads_name
