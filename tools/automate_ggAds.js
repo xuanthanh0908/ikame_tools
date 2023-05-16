@@ -95,8 +95,7 @@ const runTest = async (req, res, next) => {
                   app_promote_btn
                 );
                 // search your app
-                const input_search_app =
-                  ".leading-text + .input-container .input.input-area";
+                const input_search_app = ".flex-div .input.input-area";
                 const condition_04 = until.elementLocated({
                   css: input_search_app,
                 });
