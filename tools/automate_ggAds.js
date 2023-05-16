@@ -8,7 +8,6 @@ const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-const { resolve } = require("path");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
@@ -256,12 +255,12 @@ const handleStep2 = async (DATA, driver, userId, id) => {
               .then(async () => {
                 // enable language
                 // input[placeholder="Start typing or select a language"]'
-                const input_language = "input input-area";
-                await driver
-                  .findElements(By.className(input_language))
-                  .then(async (elements) => {
-                    await elements[1].click();
-                  });
+                const input_language =
+                  ".languages .top-section .leading-text + label>input";
+                const findLang = await driver.findElement(
+                  By.css(input_language)
+                );
+                await driver.executeScript("arguments[0].click()", findLang);
 
                 // choose language
                 if (DATA.languages.length > 0 && DATA.languages[0] !== "All") {
