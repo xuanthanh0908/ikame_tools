@@ -117,22 +117,20 @@ const runTest = async (req, res, next) => {
                           await driver
                             .findElement(By.css(select_app_path))
                             .click();
-
-                          // const campaign_name_css_path =
-                          //   '/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]'
-                          // const campaign_input = await driver.findElement(
-                          //   By.xpath(campaign_name_css_path),
-                          // )
-                          const input_camp_name = ".campaign-name-view .input.input-area"
-                          const condition_05 = until.elementLocated({ 
+                          const input_camp_name =
+                            ".campaign-name-view .input.input-area";
+                          const condition_05 = until.elementLocated({
                             css: input_camp_name,
-                          })
-                          await driver.wait(condition_05, maxTime).then(async () => {
-                            const input = await driver.findElement(By.css(input_camp_name))
-                            await clearInput(input)
-                            await input.sendKeys(DATA.campaign_name)
-                          })
-                          
+                          });
+                          await driver
+                            .wait(condition_05, maxTime)
+                            .then(async () => {
+                              const input = await driver.findElement(
+                                By.css(input_camp_name)
+                              );
+                              await clearInput(input);
+                              await input.sendKeys(DATA.campaign_name);
+                            });
 
                           /// next button
                           const button_next_path =
@@ -813,28 +811,23 @@ const handleStep6_1 = async (DATA, driver, userId, id) => {
         .executeScript("arguments[0].click()", findButton)
         .then(async () => {
           await driver.sleep(3000).then(async () => {
-            const btn_upload_className = "upload-menu";
+            const btn_upload_css = "upload-button .upload-menu";
             await driver
-              .wait(
-                until.elementLocated(By.className(btn_upload_className)),
-                max_time
-              )
+              .wait(until.elementLocated(By.css(btn_upload_css)), max_time)
               .then(async () => {
                 await driver
-                  .findElements(By.className(btn_upload_className))
-                  .then(async (elements) => {
-                    // console.log("====CHECK EL====", elements[0]);
-                    elements[0].click().then(async () => {
-                      const from_pc_class = "menu-item-label";
-                      await driver
-                        .findElements(By.className(from_pc_class))
-                        .then(async (pc) => {
-                          handleStep6_2(DATA, pc[0], driver, userId, id)
-                            .then(() => resolve("success"))
-                            .catch(reject);
-                        });
-                      // });
-                    });
+                  .findElement(By.css(btn_upload_css))
+                  .click()
+                  .then(async () => {
+                    const from_pc_class = "menu-item-label";
+                    await driver
+                      .findElements(By.className(from_pc_class))
+                      .then(async (pc) => {
+                        handleStep6_2(DATA, pc[0], driver, userId, id)
+                          .then(() => resolve("success"))
+                          .catch(reject);
+                      });
+                    // });
                   });
               });
           });
