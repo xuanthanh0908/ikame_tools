@@ -148,6 +148,8 @@ const unexpectedErrorHandler = (error) => {
 process.on("unhandledRejection", unexpectedErrorHandler);
 process.on("uncaughtException", unexpectedErrorHandler);
 
+
+/// something went wrong .
 process.on("SIGTERM", () => {
   console.log("SIGTERM received");
   // if (server) {
