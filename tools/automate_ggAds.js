@@ -95,63 +95,57 @@ const runTest = async (req, res, next) => {
                   app_promote_btn
                 );
                 // search your app
-                const input_search_app = "input input-area";
+                const input_search_app =
+                  ".leading-text + .input-container .input.input-area";
                 const condition_04 = until.elementLocated({
-                  className: input_search_app,
+                  css: input_search_app,
                 });
                 await driver.wait(condition_04, maxTime).then(async () => {
                   await driver
-                    .findElements({
-                      className: input_search_app,
+                    .findElement({
+                      css: input_search_app,
                     })
-                    .then(async (elements) => {
-                      await elements[1]
-                        .sendKeys(DATA.package_name)
+                    .sendKeys(DATA.package_name)
+                    .then(async () => {
+                      const select_app_path =
+                        ".app-info._ngcontent-awn-CM_EDITING-33";
+                      const conditions_02 = until.elementLocated({
+                        css: select_app_path,
+                      });
+                      await driver
+                        .wait(conditions_02, maxTime)
                         .then(async () => {
-                          const select_app_path =
-                            ".app-info._ngcontent-awn-CM_EDITING-33";
+                          await driver
+                            .findElement(By.css(select_app_path))
+                            .click();
 
-                          const conditions_02 = until.elementLocated({
-                            css: select_app_path,
+                          // const campaign_name_css_path =
+                          //   '/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]'
+                          // const campaign_input = await driver.findElement(
+                          //   By.xpath(campaign_name_css_path),
+                          // )
+                          elements[2].clear();
+                          driver.sleep(1000);
+                          elements[2].sendKeys(DATA.campaign_name);
+
+                          /// next button
+                          const button_next_path =
+                            "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                          const conditions_03 = until.elementLocated({
+                            xpath: button_next_path,
                           });
                           await driver
-                            .wait(conditions_02, maxTime)
+                            .wait(conditions_03, maxTime)
                             .then(async () => {
+                              const button = await driver.findElement(
+                                By.xpath(button_next_path)
+                              );
                               await driver
-                                .findElement(By.css(select_app_path))
-                                .click();
-
-                              // const campaign_name_css_path =
-                              //   '/html[1]/body[1]/div[1]/root[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[1]/div[1]/awsm-child-content[1]/div[1]/div[1]/cm-editing-root[1]/deferred-component[1]/construction-root[1]/base-root[1]/div[1]/div[2]/div[1]/view-loader[1]/campaign-construction-selection[1]/guided-selection-engine[1]/div[1]/campaign-name-view[1]/div[1]/div[2]/div[1]/material-input[1]/div[1]/div[1]/label[1]/input[1]'
-                              // const campaign_input = await driver.findElement(
-                              //   By.xpath(campaign_name_css_path),
-                              // )
-                              elements[2].clear();
-                              driver.sleep(1000);
-                              elements[2].sendKeys(DATA.campaign_name);
-
-                              /// next button
-                              const button_next_path =
-                                "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-                              const conditions_03 = until.elementLocated({
-                                xpath: button_next_path,
-                              });
-                              await driver
-                                .wait(conditions_03, maxTime)
+                                .executeScript("arguments[0].click()", button)
                                 .then(async () => {
-                                  const button = await driver.findElement(
-                                    By.xpath(button_next_path)
-                                  );
-                                  await driver
-                                    .executeScript(
-                                      "arguments[0].click()",
-                                      button
-                                    )
-                                    .then(async () => {
-                                      handleStep2(DATA, driver, userId, id)
-                                        .then(() => resolve("success"))
-                                        .catch(reject);
-                                    });
+                                  handleStep2(DATA, driver, userId, id)
+                                    .then(() => resolve("success"))
+                                    .catch(reject);
                                 });
                             });
                         });
