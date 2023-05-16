@@ -59,4 +59,8 @@ for currentDir in filter(os.path.isdir, os.listdir(rootDir)):
     # Go back to the original directory
     os.chdir(rootDir)
 
+# update package.json
+os.system("npm install")
+# update pm2
+os.system("pm2 restart bs")
 print("-------- Update complete! --------")
