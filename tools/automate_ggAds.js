@@ -109,7 +109,7 @@ const runTest = async (req, res, next) => {
                         .sendKeys(DATA.package_name)
                         .then(async () => {
                           const select_app_path =
-                            ".app-info._ngcontent-awn-CM_EDITING-33";
+                            ".leading-text + .input-container .input.input-area";
 
                           const conditions_02 = until.elementLocated({
                             css: select_app_path,
