@@ -154,6 +154,7 @@ const runTest = (req, res, next) => {
                           nextAction(DATA, driver, userId, id)
                             .then(() => resolve("success"))
                             .catch(reject);
+
                           // // console.log("click choose video");
                           // handleStep2(DATA, driver, id, userId)
                           //   .then((e) => {
@@ -364,30 +365,6 @@ const handleStep2 = async (DATA, driver, id, userId) => {
                             .click()
                             .then(() => resolve("success"))
                             .catch(reject);
-                          // // handle next button
-                          const next_button_class = "btn btn-yes";
-                          await driver
-                            .findElements(By.className(next_button_class))
-                            .then(async (elements) => {
-                              elements[0].click().then(async () => {
-                                // finish
-                                await driver.sleep(10000).then(async () => {
-                                  updateAdsGroupCampaign(
-                                    id,
-                                    "completed",
-                                    userId,
-                                    "RUN TEST SUCCESS"
-                                  );
-                                });
-                                await driver.sleep(1000).then(async () => {
-                                  resolve({
-                                    status: 200,
-                                    message: "RUN TEST SUCCESS",
-                                  });
-                                  await driver.quit();
-                                });
-                              });
-                            });
                         });
                     });
 
