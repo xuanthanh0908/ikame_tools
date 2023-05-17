@@ -7,8 +7,8 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = 'http://localhost:9000/api/v1'
+// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   ADSGROUP: "/ads-asset",
 };

@@ -22,28 +22,37 @@ const updateCreativePlaylistCampaign = async (
       status: status,
     });
     emitEvent("message", {
-      message,
+      message: "run test success",
       type: "success",
       userId,
+      date: Date.now(),
     });
   } catch (error) {
     console.log("===========API ERROR=================", error);
     emitEvent("message", {
       message,
-      type: "success",
+      type: "run test failed",
       userId,
+      date: Date.now(),
     });
   }
 };
 
-const runTest = (req, res, next) => {
-  const { id, userId } = req.body;
-  const DATA = req.data;
-  // console.log("=============DATA==============", DATA);
-  const max_time = 30000;
+// const numBrowsers = 9;
+let x = 0,
+  y = 0;
+// Create an array to store the WebDriver instances for each browser
+const drivers = [];
+
+const diff = (a, b) => {
+  return Math.abs(a - b);
+};
+// Create a function to open a new browser window and set its size
+const openBrowserWindow = async (data, index) => {
+  const numBrowsers = data.length;
   return new Promise(async (resolve, reject) => {
-    readFile()
-      .then(async (path) => {
+    readFile().then(async (path) => {
+      try {
         // init maxtime
         let options = new firefox.Options();
 
@@ -54,59 +63,116 @@ const runTest = (req, res, next) => {
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-        driver.manage().window().maximize();
-        try {
-          await driver.get("https://studio.youtube.com");
-          /// change channel
-          const chanel_path = "//button[@id='avatar-btn']";
+        // Add the driver instance to the array
+        drivers.push(driver);
+
+        // Get the window size
+        const windowSize = await driver.manage().window().getSize();
+        const windowWidth = windowSize.width;
+        const windowHeight = windowSize.height;
+        let divide = 1;
+        if (numBrowsers % 2 == 0) {
+          divide = 2;
+        } else {
+          divide = 3;
+        }
+        // Calculate the desired size for the browser window
+        const browserWidth = Math.floor(
+          (windowWidth * 1) / (numBrowsers === 1 ? 1 : divide)
+        );
+        const browserHeight = Math.floor(
+          (windowHeight * 1) / (numBrowsers === 1 ? 1 : divide)
+        );
+        await driver.manage().window().setRect({
+          width: browserWidth,
+          height: browserHeight,
+          x: x,
+          y: y,
+        });
+
+        resolve("success");
+        // Update the position for the next browser window
+        x += browserWidth;
+        if (diff(x, windowWidth) <= 20) {
+          x = 0;
+          y += browserHeight;
+        }
+
+        const req = data[index];
+        // console.log("DATA", req);
+        const res = null;
+        const next = null;
+        runTest(req, res, next, driver);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+};
+
+// Open multiple browser windows
+const openMultipleBrowsers = async (data) => {
+  const numBrowsers = data.length;
+  for (let i = 0; i < numBrowsers; i++) {
+    await openBrowserWindow(data, i);
+  }
+};
+
+const runTest = (req, res, next, driver) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
+  // console.log("=============DATA==============", DATA);
+  return new Promise(async (resolve, reject) => {
+    try {
+      await driver.get("https://studio.youtube.com");
+      /// change channel
+      const chanel_path = "//button[@id='avatar-btn']";
+      await driver
+        .findElement(By.xpath(chanel_path))
+        .click()
+        .then(async () => {
+          const switch_acc_path =
+            "//body//ytcp-app//ytd-compact-link-renderer[3]";
           await driver
-            .findElement(By.xpath(chanel_path))
+            .findElement(By.xpath(switch_acc_path))
             .click()
             .then(async () => {
-              const switch_acc_path =
-                "//body//ytcp-app//ytd-compact-link-renderer[3]";
-              await driver
-                .findElement(By.xpath(switch_acc_path))
-                .click()
-                .then(async () => {
-                  await driver.sleep(500).then(async () => {
-                    const all_acc_tagname = "ytd-account-item-renderer";
-                    await driver
-                      .findElements(By.tagName(all_acc_tagname))
-                      .then(async (elements) => {
-                        for (let index = 0; index < elements.length; index++) {
-                          const element = elements[index];
-                          let pathItem =
-                            '(//yt-formatted-string[@id="channel-title"])[' +
-                            (index + 1) +
-                            "]";
-                          driver
-                            .findElement(By.xpath(pathItem))
-                            .getText()
-                            .then(async (text) => {
-                              if (text === DATA.channel_name) {
-                                await element.click().then(async () => {
-                                  handleStep2(driver, req, res, next)
-                                    .then(() => resolve("success"))
-                                    .catch(reject);
-                                });
-                              }
+              await driver.sleep(500).then(async () => {
+                const all_acc_tagname = "ytd-account-item-renderer";
+                await driver
+                  .findElements(By.tagName(all_acc_tagname))
+                  .then(async (elements) => {
+                    for (let index = 0; index < elements.length; index++) {
+                      const element = elements[index];
+                      let pathItem =
+                        '(//yt-formatted-string[@id="channel-title"])[' +
+                        (index + 1) +
+                        "]";
+                      driver
+                        .findElement(By.xpath(pathItem))
+                        .getText()
+                        .then(async (text) => {
+                          if (text === DATA.channel_name) {
+                            await element.click().then(async () => {
+                              handleStep2(driver, req, res, next)
+                                .then(() => resolve("success"))
+                                .catch(reject);
                             });
-                        }
-                      });
+                          }
+                        });
+                    }
                   });
-                });
+              });
             });
-        } finally {
-          //
-          await driver.sleep(2000);
-          // driver.quit();
-        }
-      })
-      .catch((err) => {
-        console.log("RUN TEST FAILED", err);
-        updateCreativePlaylistCampaign(id, "canceled", userId);
-      });
+        });
+    } finally {
+      //
+      await driver.sleep(2000);
+      // driver.quit();
+    }
+  }).catch((err) => {
+    console.log("RUN TEST FAILED", err);
+    updateCreativePlaylistCampaign(id, "canceled", userId);
   });
 };
 ///
@@ -193,6 +259,7 @@ const handleStep2 = async (driver, req, res, next) => {
 // handle run campaign gg ads
 const handFetchCreativePlaylist = catchAsync(async (req, res, next) => {
   const { id } = req.body;
+  let campaign_can_run = [];
   try {
     const response = await axios.get(
       backend_campaign_url + url.CREATIVE + "/" + id
@@ -202,7 +269,24 @@ const handFetchCreativePlaylist = catchAsync(async (req, res, next) => {
       // console.log("==========DATA===========", origin_data);
       req.data = origin_data;
       if (origin_data.status === "pending" || origin_data.status === "canceled")
-        await runTest(req, res, next);
+        campaign_can_run.push({
+          data: origin_data,
+          body: req.body,
+        });
+      /// reset x, y
+      x = 0;
+      y = 0;
+      if (campaign_can_run.length > 0) {
+        // Example usage
+        openMultipleBrowsers(campaign_can_run)
+          .then(() => {
+            // Do something after opening the browsers
+            console.log("Browsers opened successfully");
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
     } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
     throw new ApiError(400, "BAD REQUEST");
@@ -211,6 +295,7 @@ const handFetchCreativePlaylist = catchAsync(async (req, res, next) => {
 // handle run multiple campaign ads group
 const handMultiFetchCreativePlaylist = catchAsync(async (req, res, next) => {
   const { all_campaign } = req.body;
+  let campaign_can_run = [];
   // console.log("======ALL CAMPAIGN======", all_campaign);
   try {
     let index = 0;
@@ -231,10 +316,29 @@ const handMultiFetchCreativePlaylist = catchAsync(async (req, res, next) => {
           origin_data.status === "pending" ||
           origin_data.status === "canceled"
         ) {
-          await runTest(req, res, next);
+          campaign_can_run.push({
+            data: origin_data,
+            body: req.body,
+          });
         }
       } else throw new ApiError(400, "BAD REQUEST");
       index++;
+    }
+
+    /// reset x, y
+    x = 0;
+    y = 0;
+    console.log("======= PLAYLIST RUN =======", campaign_can_run.length);
+    if (campaign_can_run.length > 0) {
+      // Example usage
+      openMultipleBrowsers(campaign_can_run)
+        .then(() => {
+          // Do something after opening the browsers
+          console.log("====== PLAYLIST RUN SUCCESS ======");
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
     }
   } catch (error) {
     console.log("======ERROR======", error);
