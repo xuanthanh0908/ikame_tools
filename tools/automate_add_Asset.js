@@ -7,10 +7,19 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-// const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-const backend_campaign_url = "http://localhost:9000/api/v1";
+const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   ADSGROUP: "/ads-asset",
+};
+// const numBrowsers = 9;
+let x = 0,
+  y = 0;
+// Create an array to store the WebDriver instances for each browser
+const drivers = [];
+
+const diff = (a, b) => {
+  return Math.abs(a - b);
 };
 
 const updateAdsGroupCampaign = async (
@@ -42,140 +51,109 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
-const runTest = (req, res, next) => {
+const runTest = (req, res, next, driver) => {
   const { id, userId } = req.body;
   const DATA = req.data;
   // console.log("=============DATA==============", DATA);
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
-    readFile()
-      .then(async (path) => {
-        // init maxtime
-        let options = new firefox.Options();
+    try {
+      const res = await axios.get(
+        backend_campaign_url +
+          "/config/ads-groups?created_by=" +
+          userId +
+          "&is_default=true"
+      );
+      await driver.get(res.data.data[0].campaign_url);
+      await handleStep1(DATA, driver, userId, id, res.data.data[0].id_game_app);
 
-        options.setProfile(path);
-        options.setPreference("layout.css.devPixelsPerPx", "0.7");
-        //To wait for browser to build and launch properly
-        let driver = await new webdriver.Builder()
-          .forBrowser("firefox")
-          .setFirefoxOptions(options)
-          .build();
-        driver.manage().window().maximize();
-        try {
-          const res = await axios.get(
-            backend_campaign_url +
-              "/config/ads-groups?created_by=" +
-              userId +
-              "&is_default=true"
-          );
-          await driver.get(res.data.data[0].campaign_url);
-          await handleStep1(
-            DATA,
-            driver,
-            userId,
-            id,
-            res.data.data[0].id_game_app
-          );
+      const loading_page = "//div[contains(text(),'Ad group name')]";
+      await driver
+        .wait(
+          until.elementLocated({
+            xpath: loading_page,
+          }),
+          max_time
+        )
+        .then(async () => {
+          /// wait for load down components loaded
+          const ads_group_name_path = "(//input[@type='text'])[2]";
+          const condition = until.elementLocated({
+            xpath: ads_group_name_path,
+          });
+          await driver.wait(condition, max_time).then(async () => {
+            const ads_group = await driver.findElement(
+              By.xpath(ads_group_name_path)
+            );
+            // console.log("===ads_group=====", ads_group);
+            clearInput(ads_group).then(async () => {
+              await ads_group.sendKeys(DATA.ads_group_name).then(async () => {
+                // handle headline
+                const input_headline_path =
+                  "(//input[@aria-label='Headline 1 of 5'])[1]";
+                const conditions_01 = until.elementLocated({
+                  xpath: input_headline_path,
+                });
+                await driver.wait(conditions_01, max_time).then(async () => {
+                  for (const [index, value] of DATA.headline.entries()) {
+                    const input_headline_path =
+                      "(//input[@aria-label='Headline " +
+                      (index + 1) +
+                      " of 5'])[1]";
+                    await driver
+                      .findElement(By.xpath(input_headline_path))
+                      .sendKeys(value);
+                  }
+                  for (const [index, value] of DATA.desc.entries()) {
+                    const input_des_path =
+                      "(//input[@aria-label='Description " +
+                      (index + 1) +
+                      " of 5'])[1]";
+                    await driver
+                      .findElement(By.xpath(input_des_path))
+                      .sendKeys(value);
+                  }
 
-          const loading_page = "//div[contains(text(),'Ad group name')]";
-          await driver
-            .wait(
-              until.elementLocated({
-                xpath: loading_page,
-              }),
-              max_time
-            )
-            .then(async () => {
-              /// wait for load down components loaded
-              const ads_group_name_path = "(//input[@type='text'])[2]";
-              const condition = until.elementLocated({
-                xpath: ads_group_name_path,
-              });
-              await driver.wait(condition, max_time).then(async () => {
-                const ads_group = await driver.findElement(
-                  By.xpath(ads_group_name_path)
-                );
-                // console.log("===ads_group=====", ads_group);
-                clearInput(ads_group).then(async () => {
-                  await ads_group
-                    .sendKeys(DATA.ads_group_name)
-                    .then(async () => {
-                      // handle headline
-                      const input_headline_path =
-                        "(//input[@aria-label='Headline 1 of 5'])[1]";
-                      const conditions_01 = until.elementLocated({
-                        xpath: input_headline_path,
-                      });
-                      await driver
-                        .wait(conditions_01, max_time)
-                        .then(async () => {
-                          // console.log("DATA.headline", DATA.headline);
-                          for (const [
-                            index,
-                            value,
-                          ] of DATA.headline.entries()) {
-                            // console.log("===INDEX====", index);
-                            // console.log("===VALUE====", value);
-                            const input_headline_path =
-                              "(//input[@aria-label='Headline " +
-                              (index + 1) +
-                              " of 5'])[1]";
-                            await driver
-                              .findElement(By.xpath(input_headline_path))
-                              .sendKeys(value);
-                          }
-                          for (const [index, value] of DATA.desc.entries()) {
-                            const input_des_path =
-                              "(//input[@aria-label='Description " +
-                              (index + 1) +
-                              " of 5'])[1]";
-                            await driver
-                              .findElement(By.xpath(input_des_path))
-                              .sendKeys(value);
-                          }
+                  if (
+                    DATA.videos &&
+                    DATA.videos[0]?.length > 0 &&
+                    DATA.videos.length > 0
+                  ) {
+                    await handleStep2(DATA, driver, userId, id);
+                    console.log("=====OK 01=====");
+                  }
+                  if (
+                    DATA.images &&
+                    DATA.images[0]?.length > 0 &&
+                    DATA.images.length > 0
+                  ) {
+                    await handleStep3(DATA, driver, userId, id);
+                    console.log("=====OK 02=====");
+                  }
 
-                          if (
-                            DATA.videos &&
-                            DATA.videos[0]?.length > 0 &&
-                            DATA.videos.length > 0
-                          ) {
-                            await handleStep2(DATA, driver, userId, id);
-                            console.log("=====OK 01=====");
-                          }
-                          if (
-                            DATA.images &&
-                            DATA.images[0]?.length > 0 &&
-                            DATA.images.length > 0
-                          ) {
-                            await handleStep3(DATA, driver, userId, id);
-                            console.log("=====OK 02=====");
-                          }
+                  nextAction(DATA, driver, userId, id)
+                    .then(() => resolve("success"))
+                    .catch(reject);
 
-                          nextAction(DATA, driver, userId, id)
-                            .then(() => resolve("success"))
-                            .catch(reject);
-
-                          // // console.log("click choose video");
-                          // handleStep2(DATA, driver, id, userId)
-                          //   .then((e) => {
-                          //     resolve(e);
-                          //   })
-                          //   .catch(reject);
-                        });
-                    });
+                  // // console.log("click choose video");
+                  // handleStep2(DATA, driver, id, userId)
+                  //   .then((e) => {
+                  //     resolve(e);
+                  //   })
+                  //   .catch(reject);
                 });
               });
             });
-        } finally {
-          //
-          await driver.sleep(2000);
-          // driver.quit();
-        }
-      })
-      .catch((err) => {
-        console.log("RUN TEST FAILED", err);
-        updateAdsGroupCampaign(id, "canceled", userId);
-      });
+          });
+        });
+    } finally {
+      //
+      await driver.sleep(2000);
+      // driver.quit();
+    }
+  }).catch((err) => {
+    console.log("RUN TEST FAILED", err);
+    updateAdsGroupCampaign(id, "canceled", userId);
   });
 };
 /// handle get and choose campaign id
@@ -504,9 +482,81 @@ const nextAction = async (DATA, driver, userId, id) => {
     }
   });
 };
+
+// Create a function to open a new browser window and set its size
+const openBrowserWindow = async (data, index) => {
+  const numBrowsers = data.length;
+  return new Promise(async (resolve, reject) => {
+    readFile().then(async (path) => {
+      try {
+        // init maxtime
+        let options = new firefox.Options();
+
+        options.setProfile(path);
+        options.setPreference("layout.css.devPixelsPerPx", "0.7");
+        //To wait for browser to build and launch properly
+        let driver = await new webdriver.Builder()
+          .forBrowser("firefox")
+          .setFirefoxOptions(options)
+          .build();
+        // Add the driver instance to the array
+        drivers.push(driver);
+
+        // Get the window size
+        const windowSize = await driver.manage().window().getSize();
+        const windowWidth = windowSize.width;
+        const windowHeight = windowSize.height;
+        let divide = 1;
+        if (numBrowsers % 2 == 0) {
+          divide = 2;
+        } else {
+          divide = 3;
+        }
+        // Calculate the desired size for the browser window
+        const browserWidth = Math.floor(
+          (windowWidth * 1) / (numBrowsers === 1 ? 1 : divide)
+        );
+        const browserHeight = Math.floor(
+          (windowHeight * 1) / (numBrowsers === 1 ? 1 : divide)
+        );
+        await driver.manage().window().setRect({
+          width: browserWidth,
+          height: browserHeight,
+          x: x,
+          y: y,
+        });
+
+        resolve("success");
+        // Update the position for the next browser window
+        x += browserWidth;
+        if (diff(x, windowWidth) <= 20) {
+          x = 0;
+          y += browserHeight;
+        }
+
+        const req = data[index];
+        // console.log("DATA", req);
+        const res = null;
+        const next = null;
+        runTest(req, res, next, driver);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+};
+
+// Open multiple browser windows
+const openMultipleBrowsers = async (data) => {
+  const numBrowsers = data.length;
+  for (let i = 0; i < numBrowsers; i++) {
+    await openBrowserWindow(data, i);
+  }
+};
 // handle run campaign gg ads
 const handFetchAdsGroup = catchAsync(async (req, res, next) => {
   const { id } = req.body;
+  let campaign_can_run = [];
   try {
     const response = await axios.get(
       backend_campaign_url + url.ADSGROUP + "/" + id
@@ -515,8 +565,29 @@ const handFetchAdsGroup = catchAsync(async (req, res, next) => {
       const origin_data = response.data.data;
       // console.log('==========DATA===========', origin_data)
       req.data = origin_data;
-      if (origin_data.status === "pending" || origin_data.status === "canceled")
-        await runTest(req, res, next);
+      if (
+        origin_data.status === "pending" ||
+        origin_data.status === "canceled"
+      ) {
+        campaign_can_run.push({
+          data: origin_data,
+          body: req.body,
+        });
+      }
+      /// reset x, y
+      x = 0;
+      y = 0;
+      if (campaign_can_run.length > 0) {
+        // Example usage
+        openMultipleBrowsers(campaign_can_run)
+          .then(() => {
+            // Do something after opening the browsers
+            console.log("Browsers opened successfully");
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
     } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
     throw new ApiError(400, "BAD REQUEST");
@@ -525,6 +596,7 @@ const handFetchAdsGroup = catchAsync(async (req, res, next) => {
 // handle run multiple campaign ads group
 const handMultiFetchAdsGroup = catchAsync(async (req, res, next) => {
   const { all_campaign } = req.body;
+  let campaign_can_run = [];
   // console.log("======ALL CAMPAIGN======", all_campaign);
   try {
     let index = 0;
@@ -545,10 +617,28 @@ const handMultiFetchAdsGroup = catchAsync(async (req, res, next) => {
           origin_data.status === "pending" ||
           origin_data.status === "canceled"
         ) {
-          await runTest(req, res, next);
+          campaign_can_run.push({
+            data: origin_data,
+            body: req.body,
+          });
         }
       } else throw new ApiError(400, "BAD REQUEST");
       index++;
+    }
+    /// reset x, y
+    x = 0;
+    y = 0;
+    console.log("======= ADS GROUP RUN =======", campaign_can_run.length);
+    if (campaign_can_run.length > 0) {
+      // Example usage
+      openMultipleBrowsers(campaign_can_run)
+        .then(() => {
+          // Do something after opening the browsers
+          console.log("====== ADS GROUP RUN SUCCESS ======");
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
     }
   } catch (error) {
     console.log("======ERROR======", error);

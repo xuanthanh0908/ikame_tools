@@ -382,7 +382,6 @@ const openMultipleBrowsers = async (data) => {
     await openBrowserWindow(data, i);
   }
 };
-
 ///////////////////////////
 // handle run single creative youtube
 const handleFetchData = async (req, res, next) => {
