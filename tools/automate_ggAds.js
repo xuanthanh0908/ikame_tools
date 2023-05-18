@@ -65,19 +65,18 @@ const runTest = async (req, res, next) => {
         // driver.switchTo().window(driver.getWindowHandle());
         try {
           await driver.get(DATA.campaign_url);
-          const app_promote_path =
-            "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+          const app_promote_path = "dynamic-component[data-value=APP_DOWNLOADS";
           await driver
             .wait(
               until.elementLocated({
-                xpath: app_promote_path,
+                css: app_promote_path,
               }),
               maxTime
             )
             .then(async () => {
               // const app_promote_path =
               //   "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
-              await driver.findElement(By.xpath(app_promote_path)).click();
+              await driver.findElement(By.css(app_promote_path)).click();
 
               /// wait for load down components loaded
               const some_path_loading = "//div[normalize-space()='Android']";
