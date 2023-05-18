@@ -15,86 +15,6 @@ const url = {
   CAMPAIGN_UPDATE: "/campaign/update-by-one",
   ADS_GROUP_UPDATE: "/ads-asset",
 };
-
-// const numBrowsers = 9;
-let x = 0,
-  y = 0;
-// Create an array to store the WebDriver instances for each browser
-const drivers = [];
-
-const diff = (a, b) => {
-  return Math.abs(a - b);
-};
-// Create a function to open a new browser window and set its size
-const openBrowserWindow = async (data, index) => {
-  const numBrowsers = data.length;
-  return new Promise(async (resolve, reject) => {
-    readFile().then(async (path) => {
-      try {
-        // init maxtime
-        let options = new firefox.Options();
-
-        options.setProfile(path);
-        options.setPreference("layout.css.devPixelsPerPx", "0.7");
-        //To wait for browser to build and launch properly
-        let driver = await new webdriver.Builder()
-          .forBrowser("firefox")
-          .setFirefoxOptions(options)
-          .build();
-        // Add the driver instance to the array
-        drivers.push(driver);
-
-        // Get the window size
-        const windowSize = await driver.manage().window().getSize();
-        const windowWidth = windowSize.width;
-        const windowHeight = windowSize.height;
-        let divide = 1;
-        if (numBrowsers % 2 == 0) {
-          divide = 2;
-        } else {
-          divide = 3;
-        }
-        // Calculate the desired size for the browser window
-        const browserWidth = Math.floor(
-          (windowWidth * 1) / (numBrowsers === 1 ? 1 : divide)
-        );
-        const browserHeight = Math.floor(
-          (windowHeight * 1) / (numBrowsers === 1 ? 1 : divide)
-        );
-        await driver.manage().window().setRect({
-          width: browserWidth,
-          height: browserHeight,
-          x: x,
-          y: y,
-        });
-
-        resolve("success");
-        // Update the position for the next browser window
-        x += browserWidth;
-        if (diff(x, windowWidth) <= 20) {
-          x = 0;
-          y += browserHeight;
-        }
-
-        const req = data[index];
-        // console.log("DATA", req);
-        const res = null;
-        const next = null;
-        runTest(req, res, next, driver);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
-};
-
-// Open multiple browser windows
-const openMultipleBrowsers = async (data) => {
-  const numBrowsers = data.length;
-  for (let i = 0; i < numBrowsers; i++) {
-    await openBrowserWindow(data, i);
-  }
-};
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
@@ -122,108 +42,133 @@ const updateAdsGroupCampaign = async (
 };
 
 // start run
-const runTest = async (req, res, next, driver) => {
+const runTest = async (req, res, next) => {
   const { id, userId } = req.body;
   const DATA = req.data;
-  const maxTime = 30000;
+
   // console.log("=============DATA==============", DATA);
   return new Promise(async (resolve, reject) => {
-    try {
-      await driver.get(DATA.campaign_url);
-      const app_promote_path =
-        "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
-      await driver
-        .wait(
-          until.elementLocated({
-            xpath: app_promote_path,
-          }),
-          maxTime
-        )
-        .then(async () => {
-          // const app_promote_path =
-          //   "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
-          await driver.findElement(By.xpath(app_promote_path)).click();
+    readFile()
+      .then(async (path) => {
+        // init maxtime
+        const maxTime = 30000;
+        let options = new firefox.Options();
 
-          /// wait for load down components loaded
-          const some_path_loading = "//div[normalize-space()='Android']";
-          const conditions_01 = until.elementLocated({
-            xpath: some_path_loading,
-          });
-          await driver.wait(conditions_01, maxTime).then(async () => {
-            const type_app_path =
-              "//div[normalize-space()='" + DATA.type_app + "']";
-            const app_promote_btn = await driver.findElement(
-              By.xpath(type_app_path)
-            );
-            await driver.executeScript(
-              "arguments[0].click();",
-              app_promote_btn
-            );
-            // search your app
-            const input_search_app = ".flex-div .input.input-area";
-            const condition_04 = until.elementLocated({
-              css: input_search_app,
-            });
-            await driver.wait(condition_04, maxTime).then(async () => {
-              await driver
-                .findElement({
+        options.setProfile(path);
+        options.setPreference("layout.css.devPixelsPerPx", "0.7");
+        //To wait for browser to build and launch properly
+        let driver = await new webdriver.Builder()
+          .forBrowser("firefox")
+          .setFirefoxOptions(options)
+          .build();
+        driver.manage().window().maximize();
+        // driver.switchTo().window(driver.getWindowHandle());
+        try {
+          await driver.get(DATA.campaign_url);
+          const app_promote_path =
+            "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+          await driver
+            .wait(
+              until.elementLocated({
+                xpath: app_promote_path,
+              }),
+              maxTime
+            )
+            .then(async () => {
+              // const app_promote_path =
+              //   "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
+              await driver.findElement(By.xpath(app_promote_path)).click();
+
+              /// wait for load down components loaded
+              const some_path_loading = "//div[normalize-space()='Android']";
+              const conditions_01 = until.elementLocated({
+                xpath: some_path_loading,
+              });
+              await driver.wait(conditions_01, maxTime).then(async () => {
+                const type_app_path =
+                  "//div[normalize-space()='" + DATA.type_app + "']";
+                const app_promote_btn = await driver.findElement(
+                  By.xpath(type_app_path)
+                );
+                await driver.executeScript(
+                  "arguments[0].click();",
+                  app_promote_btn
+                );
+                // search your app
+                const input_search_app = ".flex-div .input.input-area";
+                const condition_04 = until.elementLocated({
                   css: input_search_app,
-                })
-                .sendKeys(DATA.package_name)
-                .then(async () => {
-                  const select_app_path =
-                    ".app-info._ngcontent-awn-CM_EDITING-33";
-                  const conditions_02 = until.elementLocated({
-                    css: select_app_path,
-                  });
-                  await driver.wait(conditions_02, maxTime).then(async () => {
-                    await driver.findElement(By.css(select_app_path)).click();
-                    const input_camp_name =
-                      ".campaign-name-view .input.input-area";
-                    const condition_05 = until.elementLocated({
-                      css: input_camp_name,
-                    });
-                    await driver.wait(condition_05, maxTime).then(async () => {
-                      const input = await driver.findElement(
-                        By.css(input_camp_name)
-                      );
-                      await clearInput(input);
-                      await input.sendKeys(DATA.campaign_name);
-                    });
-
-                    /// next button
-                    const button_next_path =
-                      "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
-                    const conditions_03 = until.elementLocated({
-                      xpath: button_next_path,
-                    });
-                    await driver.wait(conditions_03, maxTime).then(async () => {
-                      const button = await driver.findElement(
-                        By.xpath(button_next_path)
-                      );
+                });
+                await driver.wait(condition_04, maxTime).then(async () => {
+                  await driver
+                    .findElement({
+                      css: input_search_app,
+                    })
+                    .sendKeys(DATA.package_name)
+                    .then(async () => {
+                      const select_app_path =
+                        ".app-info._ngcontent-awn-CM_EDITING-33";
+                      const conditions_02 = until.elementLocated({
+                        css: select_app_path,
+                      });
                       await driver
-                        .executeScript("arguments[0].click()", button)
+                        .wait(conditions_02, maxTime)
                         .then(async () => {
-                          handleStep2(DATA, driver, userId, id)
-                            .then(() => resolve("success"))
-                            .catch(reject);
+                          await driver
+                            .findElement(By.css(select_app_path))
+                            .click();
+                          const input_camp_name =
+                            ".campaign-name-view .input.input-area";
+                          const condition_05 = until.elementLocated({
+                            css: input_camp_name,
+                          });
+                          await driver
+                            .wait(condition_05, maxTime)
+                            .then(async () => {
+                              const input = await driver.findElement(
+                                By.css(input_camp_name)
+                              );
+                              await clearInput(input);
+                              await input.sendKeys(DATA.campaign_name);
+                            });
+
+                          /// next button
+                          const button_next_path =
+                            "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                          const conditions_03 = until.elementLocated({
+                            xpath: button_next_path,
+                          });
+                          await driver
+                            .wait(conditions_03, maxTime)
+                            .then(async () => {
+                              const button = await driver.findElement(
+                                By.xpath(button_next_path)
+                              );
+                              await driver
+                                .executeScript("arguments[0].click()", button)
+                                .then(async () => {
+                                  handleStep2(DATA, driver, userId, id)
+                                    .then(() => resolve("success"))
+                                    .catch(reject);
+                                });
+                            });
                         });
                     });
-                  });
                 });
+              });
             });
-          });
-        });
-    } finally {
-      //
-      await driver.sleep(2000);
-      // driver.quit();
-    }
-  }).catch((err) => {
-    reject(err);
-    console.log("RUN TEST FAILED", err);
-    updateStatusCampaign(id, "canceled", userId);
-    updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
+        } finally {
+          //
+          await driver.sleep(2000);
+          // driver.quit();
+        }
+      })
+      .catch((err) => {
+        reject(err);
+        console.log("RUN TEST FAILED", err);
+        updateStatusCampaign(id, "canceled", userId);
+        updateAdsGroupCampaign(DATA.ads_group_id, "canceled", userId);
+      });
   });
 };
 /// handle campaign setting
@@ -1082,7 +1027,6 @@ const nextAction = async (DATA, driver, userId, id) => {
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { id } = req.body;
-  let campaign_can_run = [];
   try {
     const response = await axios.get(
       backend_campaign_url + url.CAMPAIGN + "/" + id
@@ -1140,29 +1084,8 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
       };
       // console.log('==========DATA===========', campaign_data)
       req.data = campaign_data;
-      if (
-        origin_data.status === "pending" ||
-        origin_data.status === "canceled"
-      ) {
-        campaign_can_run.push({
-          data: origin_data,
-          body: req.body,
-        });
-      }
-      /// reset x, y
-      x = 0;
-      y = 0;
-      if (campaign_can_run.length > 0) {
-        // Example usage
-        openMultipleBrowsers(campaign_can_run)
-          .then(() => {
-            // Do something after opening the browsers
-            console.log("Browsers opened successfully");
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-          });
-      }
+      if (origin_data.status === "pending" || origin_data.status === "canceled")
+        await runTest(req, res, next);
     } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
     throw new ApiError(400, "BAD REQUEST");
@@ -1170,7 +1093,6 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
 });
 const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
   const { all_campaign } = req.body;
-  let campaign_can_run = [];
   try {
     let index = 0;
     while (index < all_campaign.length) {
@@ -1236,30 +1158,10 @@ const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
         if (
           origin_data.status === "pending" ||
           origin_data.status === "canceled"
-        ) {
-          campaign_can_run.push({
-            data: origin_data,
-            body: req.body,
-          });
-        }
+        )
+          await runTest(req, res, next);
       } else throw new ApiError(400, "BAD REQUEST");
       index++;
-    }
-
-    /// reset x, y
-    x = 0;
-    y = 0;
-    console.log("======= GOOGLE ADS RUN =======", campaign_can_run.length);
-    if (campaign_can_run.length > 0) {
-      // Example usage
-      openMultipleBrowsers(campaign_can_run)
-        .then(() => {
-          // Do something after opening the browsers
-          console.log("====== GOOGLE ADS RUN SUCCESS ======");
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-        });
     }
   } catch (error) {
     throw new ApiError(400, "BAD REQUEST");
