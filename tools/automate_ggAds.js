@@ -74,8 +74,6 @@ const runTest = async (req, res, next) => {
               maxTime
             )
             .then(async () => {
-              // const app_promote_path =
-              //   "//dynamic-component[@data-value='APP_DOWNLOADS']//div[@class='card card--secondary _ngcontent-awn-CM_EDITING-11']//div[@class='unified-goals-card-format _ngcontent-awn-CM_EDITING-10']";
               await driver.findElement(By.css(app_promote_path)).click();
 
               /// wait for load down components loaded
