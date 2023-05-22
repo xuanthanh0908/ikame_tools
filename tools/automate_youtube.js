@@ -247,68 +247,72 @@ const handeleStep_03 = async (
                       .then(async () => {
                         await driver.sleep(1000).then(async () => {
                           // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
-                          const url_className =
-                            ".style-scope.ytcp-video-info[target='_blank']";
+                          const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
                           await driver
                             .wait(
-                              until.elementLocated(By.css(url_className)),
+                              until.elementLocated(By.css(btn_copy_css)),
                               max_time
                             )
                             .then(async () => {
+                              const url_className =
+                                ".style-scope.ytcp-video-info[target='_blank']";
                               await driver
-                                .findElement(By.css(url_className))
-                                .getAttribute("href")
-                                .then(async (url) => {
-                                  videos.push({
-                                    file_name: title_,
-                                    url: url,
-                                  });
-
-                                  // console.log(
-                                  //   "============ VIDEO =============",
-                                  //   videos
-                                  // );
-                                  await btn_save.click().then(async () => {
-                                    const btn_close_process_path =
-                                      "//ytcp-button[@id='close-button']";
-
-                                    await driver
-                                      .wait(
-                                        until.elementLocated({
-                                          xpath: btn_close_process_path,
-                                        }),
-                                        max_time
-                                      )
-                                      .then(async () => {
-                                        await driver
-                                          .findElement(
-                                            By.xpath(btn_close_process_path)
-                                          )
-                                          .click()
-                                          .then(async () => {
-                                            resolve("success");
-                                            if (index === count - 1) {
-                                              const data = {
-                                                product_id: DATA.product_id,
-                                                channel_id: DATA.channel_id,
-                                                created_by: userId,
-                                                youtube_url: videos,
-                                              };
-                                              creativeHistory(data);
-                                              updateCreativeYTB(
-                                                id,
-                                                "completed",
-                                                userId
-                                              );
-                                              await driver.quit();
-                                            }
-                                          })
-                                          .catch(reject);
+                                .wait(
+                                  until.elementLocated(By.css(url_className)),
+                                  max_time
+                                )
+                                .then(async () => {
+                                  await driver
+                                    .findElement(By.css(url_className))
+                                    .getAttribute("href")
+                                    .then(async (url) => {
+                                      videos.push({
+                                        file_name: title_,
+                                        url: url,
                                       });
-                                  });
-                                });
-                            })
-                            .catch(reject);
+
+                                      await btn_save.click().then(async () => {
+                                        const btn_close_process_path =
+                                          "//ytcp-button[@id='close-button']";
+
+                                        await driver
+                                          .wait(
+                                            until.elementLocated({
+                                              xpath: btn_close_process_path,
+                                            }),
+                                            max_time
+                                          )
+                                          .then(async () => {
+                                            await driver
+                                              .findElement(
+                                                By.xpath(btn_close_process_path)
+                                              )
+                                              .click()
+                                              .then(async () => {
+                                                resolve("success");
+                                                if (index === count - 1) {
+                                                  const data = {
+                                                    product_id: DATA.product_id,
+                                                    channel_id: DATA.channel_id,
+                                                    created_by: userId,
+                                                    youtube_url: videos,
+                                                  };
+                                                  creativeHistory(data);
+                                                  updateCreativeYTB(
+                                                    id,
+                                                    "completed",
+                                                    userId
+                                                  );
+                                                  await driver.quit();
+                                                }
+                                              })
+                                              .catch(reject);
+                                          });
+                                      });
+                                    });
+                                })
+                                .catch(reject);
+                            });
                         });
                       });
                   });
