@@ -156,8 +156,8 @@ const runTest = async (req, res, next) => {
             });
         } finally {
           //
-          await driver.sleep(2000);
-          driver.quit();
+          // await driver.sleep(2000);
+          // driver.quit();
         }
       })
       .catch((err) => {
@@ -974,8 +974,8 @@ const handleStep7 = async (DATA, driver, userId, id) => {
                                 "RUN TEST SUCCESS"
                               );
                               await driver.sleep(2000).then(async () => {
-                                resolve("success");
                                 await driver.quit();
+                                resolve("success");
                               });
                             });
                         });

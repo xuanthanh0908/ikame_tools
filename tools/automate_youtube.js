@@ -529,8 +529,6 @@ const handleFetchData = async (req, res, next) => {
 const handMultiFetchYTB = async () => {
   const campaign_can_run = [];
   try {
-    let index = 0;
-
     const response = await axios.get(backend_campaign_url + url.YOUTUBE + "/");
     req.body = {
       ...req.body,
