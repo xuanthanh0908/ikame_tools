@@ -157,7 +157,7 @@ const runTest = async (req, res, next) => {
         } finally {
           //
           await driver.sleep(2000);
-          // driver.quit();
+          driver.quit();
         }
       })
       .catch((err) => {
