@@ -380,8 +380,13 @@ const openBrowserWindow = async (data, index) => {
         }
 
         resolve("success");
-        const req = data[index];
-        // console.log("DATA", req);
+        const req = {};
+        req.data = data[index];
+        req.body = {
+          id: data[index]._id,
+          userId: data[index].created_by,
+        };
+        // console.log("DATA", data[index]);
         const res = null;
         const next = null;
         run_Now(req, res, next, driver);
@@ -527,54 +532,44 @@ const handleFetchData = async (req, res, next) => {
 // };
 // handle run multiple creative youtube
 const handMultiFetchYTB = async () => {
-  const campaign_can_run = [];
   try {
-    const response = await axios.get(backend_campaign_url + url.YOUTUBE + "/");
-    req.body = {
-      ...req.body,
-      id: all_campaign[index],
-    };
+    const response = await axios.get(
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=4"
+    );
     if (response.status === 200) {
       const origin_data = response.data.data;
-      // console.log("==========DATA===========", origin_data);
-      req.data = origin_data;
-      if (
-        origin_data.status === "pending" ||
-        origin_data.status === "canceled"
-      ) {
-        campaign_can_run.push({
-          data: origin_data,
-          body: req.body,
-        });
-      }
-    } else throw new ApiError(400, "BAD REQUEST");
-    /// reset x, y
-    x = 0;
-    y = 0;
+      // console.log("DATA", origin_data);
+      /// reset x, y
+      x = 0;
+      y = 0;
 
-    if (campaign_can_run.length > 0) {
-      openMultipleBrowsers(campaign_can_run)
-        .then(() => {
-          // Do something after opening the browsers
-          console.log("Browsers opened successfully");
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-        });
-    }
+      if (origin_data.length > 0) {
+        openMultipleBrowsers(origin_data)
+          .then(() => {
+            // Do something after opening the browsers
+            console.log("Browsers opened successfully");
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+      // console.log("==========DATA===========", origin_data);
+    } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
     console.log("======ERROR======", error);
     throw new ApiError(400, "BAD REQUEST");
   }
 };
 // run_Now();
-const scheduleRun = async (req, res, next) => {
-  crontab.scheduleJob("*/2 * * * *", function () {
+const scheduleRun = async () => {
+  // console.log("CHECKED  CRON JOB RUN");
+  crontab.scheduleJob("*/10 * * * *", function () {
+    console.log("====== CRON JOB RUN ======");
     handMultiFetchYTB();
   });
 };
-
 module.exports = {
   handleFetchData,
   handMultiFetchYTB,
+  scheduleRun,
 };
