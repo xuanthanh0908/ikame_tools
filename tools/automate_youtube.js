@@ -292,6 +292,23 @@ const handeleStep_03 = async (
                                               .then(async () => {
                                                 resolve("success");
                                                 if (index === count - 1) {
+                                                  // file_path
+                                                  /// remove a file after upload
+                                                  fs.unlink(
+                                                    file_path,
+                                                    (err) => {
+                                                      if (err) {
+                                                        console.error(
+                                                          "Error deleting file:",
+                                                          err
+                                                        );
+                                                      } else {
+                                                        console.log(
+                                                          "File deleted successfully"
+                                                        );
+                                                      }
+                                                    }
+                                                  );
                                                   const data = {
                                                     product_id: DATA.product_id,
                                                     channel_id: DATA.channel_id,
@@ -337,7 +354,6 @@ const openBrowserWindow = async (data, index) => {
       try {
         // init maxtime
         let options = new firefox.Options();
-
         options.setProfile(path);
         options.setPreference("layout.css.devPixelsPerPx", "0.7");
         //To wait for browser to build and launch properly
@@ -389,14 +405,15 @@ const openBrowserWindow = async (data, index) => {
         // console.log("DATA", data[index]);
         const res = null;
         const next = null;
-        run_Now(req, res, next, driver);
+        run_Now(req, res, next, driver).catch(async () => {
+          await driver.quit();
+        });
       } catch (error) {
         reject(error);
       }
     });
   });
 };
-
 // Open multiple browser windows
 const openMultipleBrowsers = async (data) => {
   const numBrowsers = data.length;
@@ -534,11 +551,10 @@ const handleFetchData = async (req, res, next) => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=4"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
-      // console.log("DATA", origin_data);
       /// reset x, y
       x = 0;
       y = 0;
@@ -563,7 +579,7 @@ const handMultiFetchYTB = async () => {
 // run_Now();
 const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
-  crontab.scheduleJob("*/10 * * * *", function () {
+  crontab.scheduleJob("*/5 * * * *", function () {
     console.log("====== CRON JOB RUN ======");
     handMultiFetchYTB();
   });
