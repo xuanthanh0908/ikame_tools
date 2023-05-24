@@ -267,15 +267,14 @@ const handeleStep_03 = async (
                                     .findElement(By.css(url_className))
                                     .getAttribute("href")
                                     .then(async (url) => {
-                                      videos.push({
-                                        file_name: title_,
-                                        url: url,
-                                      });
+                                      // videos.push({
+                                      //   file_name: title_,
+                                      //   url: url,
+                                      // });
 
                                       await btn_save.click().then(async () => {
                                         const btn_close_process_path =
                                           "//ytcp-button[@id='close-button']";
-                                        /// remove a file after upload
                                         fs.unlink(file_path, (err) => {
                                           if (err) {
                                             console.error(
@@ -283,6 +282,16 @@ const handeleStep_03 = async (
                                               err
                                             );
                                           } else {
+                                            const data = {
+                                              product_id: DATA.product_id,
+                                              channel_id: DATA.channel_id,
+                                              created_by: userId,
+                                              youtube_url: {
+                                                file_name: title_,
+                                                url: url,
+                                              },
+                                            };
+                                            creativeHistory(data);
                                             console.log(
                                               "File deleted successfully"
                                             );
@@ -304,14 +313,8 @@ const handeleStep_03 = async (
                                               .then(async () => {
                                                 resolve("success");
                                                 if (index === count - 1) {
-                                                  const data = {
-                                                    product_id: DATA.product_id,
-                                                    channel_id: DATA.channel_id,
-                                                    type: DATA.type,
-                                                    created_by: userId,
-                                                    youtube_url: videos,
-                                                  };
-                                                  creativeHistory(data);
+                                                  // file_path
+                                                  /// remove a file after upload
                                                   updateCreativeYTB(
                                                     id,
                                                     "completed",
@@ -547,7 +550,7 @@ const handleFetchData = async (req, res, next) => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
@@ -579,6 +582,7 @@ const scheduleRun = async () => {
     console.log("====== CRON JOB RUN ======");
     handMultiFetchYTB();
   });
+  // handMultiFetchYTB();
 };
 module.exports = {
   handleFetchData,
