@@ -275,7 +275,19 @@ const handeleStep_03 = async (
                                       await btn_save.click().then(async () => {
                                         const btn_close_process_path =
                                           "//ytcp-button[@id='close-button']";
-
+                                        /// remove a file after upload
+                                        fs.unlink(file_path, (err) => {
+                                          if (err) {
+                                            console.error(
+                                              "Error deleting file:",
+                                              err
+                                            );
+                                          } else {
+                                            console.log(
+                                              "File deleted successfully"
+                                            );
+                                          }
+                                        });
                                         await driver
                                           .wait(
                                             until.elementLocated({
@@ -292,26 +304,10 @@ const handeleStep_03 = async (
                                               .then(async () => {
                                                 resolve("success");
                                                 if (index === count - 1) {
-                                                  // file_path
-                                                  /// remove a file after upload
-                                                  fs.unlink(
-                                                    file_path,
-                                                    (err) => {
-                                                      if (err) {
-                                                        console.error(
-                                                          "Error deleting file:",
-                                                          err
-                                                        );
-                                                      } else {
-                                                        console.log(
-                                                          "File deleted successfully"
-                                                        );
-                                                      }
-                                                    }
-                                                  );
                                                   const data = {
                                                     product_id: DATA.product_id,
                                                     channel_id: DATA.channel_id,
+                                                    type: DATA.type,
                                                     created_by: userId,
                                                     youtube_url: videos,
                                                   };
@@ -551,7 +547,7 @@ const handleFetchData = async (req, res, next) => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;

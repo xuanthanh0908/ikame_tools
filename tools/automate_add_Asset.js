@@ -166,13 +166,13 @@ const runTest = (req, res, next) => {
                 });
               });
             });
-        } finally {
-          //
-          await driver.sleep(2000);
-          // driver.quit();
+        } catch (error) {
+          await driver.quit();
+          updateAdsGroupCampaign(id, "canceled", userId);
+          reject(error);
         }
       })
-      .catch((err) => {
+      .catch(async (err) => {
         console.log("RUN TEST FAILED", err);
         updateAdsGroupCampaign(id, "canceled", userId);
       });
@@ -210,69 +210,87 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
               });
               await driver.wait(condition_02, max_time).then(async () => {
                 await driver.findElement(By.xpath(all_items_path)).click();
-                await driver.wait(condition, max_time).then(async () => {
-                  const dropdown = await driver.findElement(
-                    By.css(drop_down_path)
-                  );
-                  await driver.sleep(soft_time).then(async () => {
-                    driver
-                      .executeScript("arguments[0].click();", dropdown)
-                      .then(async () => {
-                        const input_search_campaign_path =
-                          ".search-input .input-container .input.input-area";
-                        const condition = until.elementLocated({
-                          css: drop_down_path,
-                        });
-                        await driver
-                          .wait(condition, max_time)
+
+                /// wait data of all campaign
+                const loading_classname = "campaign-icon-app";
+                await driver
+                  .wait(
+                    until.elementLocated({
+                      className: loading_classname,
+                    }),
+                    max_time
+                  )
+                  .then(async () => {
+                    await driver.wait(condition, max_time).then(async () => {
+                      const dropdown = await driver.findElement(
+                        By.css(drop_down_path)
+                      );
+                      await driver.sleep(soft_time).then(async () => {
+                        driver
+                          .executeScript("arguments[0].click();", dropdown)
                           .then(async () => {
+                            const input_search_campaign_path =
+                              ".search-input .input-container .input.input-area";
+                            const condition = until.elementLocated({
+                              css: drop_down_path,
+                            });
                             await driver
-                              .findElement({
-                                css: input_search_campaign_path,
-                              })
-                              .sendKeys(DATA.campaign_name)
+                              .wait(condition, max_time)
                               .then(async () => {
-                                await driver.sleep(soft_time).then(async () => {
-                                  const campaign_css =
-                                    "material-list span + material-select-dropdown-item";
-                                  const condition = until.elementLocated({
-                                    css: campaign_css,
-                                  });
-                                  await driver
-                                    .wait(condition, max_time)
-                                    .then(async () => {
-                                      await driver
-                                        .findElement(By.css(campaign_css))
-                                        .click()
-                                        .then(async () => {
-                                          const button_add_path =
-                                            "//i[normalize-space()='add']";
-                                          const condition =
-                                            until.elementLocated({
-                                              xpath: button_add_path,
-                                            });
-                                          await driver
-                                            .wait(condition, max_time)
-                                            .then(async () => {
-                                              const btn_ads =
-                                                await driver.findElement(
-                                                  By.xpath(button_add_path)
-                                                );
-                                              await driver
-                                                .executeScript(
-                                                  "arguments[0].click()",
-                                                  btn_ads
-                                                )
-                                                .then(() => resolve("success"));
-                                            });
+                                await driver
+                                  .findElement({
+                                    css: input_search_campaign_path,
+                                  })
+                                  .sendKeys(DATA.campaign_name)
+                                  .then(async () => {
+                                    await driver
+                                      .sleep(soft_time)
+                                      .then(async () => {
+                                        const campaign_css =
+                                          "material-list span + material-select-dropdown-item";
+                                        const condition = until.elementLocated({
+                                          css: campaign_css,
                                         });
-                                    });
-                                });
+                                        await driver
+                                          .wait(condition, max_time)
+                                          .then(async () => {
+                                            await driver
+                                              .findElement(By.css(campaign_css))
+                                              .click()
+                                              .then(async () => {
+                                                const button_add_path =
+                                                  "//i[normalize-space()='add']";
+                                                const condition =
+                                                  until.elementLocated({
+                                                    xpath: button_add_path,
+                                                  });
+                                                await driver
+                                                  .wait(condition, max_time)
+                                                  .then(async () => {
+                                                    const btn_ads =
+                                                      await driver.findElement(
+                                                        By.xpath(
+                                                          button_add_path
+                                                        )
+                                                      );
+                                                    await driver
+                                                      .executeScript(
+                                                        "arguments[0].click()",
+                                                        btn_ads
+                                                      )
+                                                      .then(() =>
+                                                        resolve("success")
+                                                      );
+                                                  });
+                                              });
+                                          });
+                                      });
+                                  });
                               });
                           });
                       });
+                    });
                   });
-                });
               });
             });
         });
@@ -483,18 +501,17 @@ const nextAction = async (DATA, driver, userId, id) => {
 };
 // handle run campaign gg ads
 const handFetchAdsGroup = catchAsync(async (req, res, next) => {
-  const { id } = req.body;
+  const { data } = req.body;
   try {
-    const response = await axios.get(
-      backend_campaign_url + url.ADSGROUP + "/" + id
-    );
-    if (response.status === 200) {
-      const origin_data = response.data.data;
-      // console.log('==========DATA===========', origin_data)
-      req.data = origin_data;
-      if (origin_data.status === "pending" || origin_data.status === "canceled")
-        await runTest(req, res, next);
-    } else throw new ApiError(400, "BAD REQUEST");
+    req.data = data;
+    // console.log("Data", data);
+    req.body = {
+      ...req.body,
+      id: data._id,
+    };
+    if (data) {
+      await runTest(req, res, next);
+    }
   } catch (error) {
     throw new ApiError(400, "BAD REQUEST");
   }
@@ -502,29 +519,16 @@ const handFetchAdsGroup = catchAsync(async (req, res, next) => {
 // handle run multiple campaign ads group
 const handMultiFetchAdsGroup = catchAsync(async (req, res, next) => {
   const { all_campaign } = req.body;
-  // console.log("======ALL CAMPAIGN======", all_campaign);
   try {
     let index = 0;
     while (index < all_campaign.length) {
-      // console.log("======ID======", all_campaign[index]);
-      const response = await axios.get(
-        backend_campaign_url + url.ADSGROUP + "/" + all_campaign[index]
-      );
       req.body = {
         ...req.body,
-        id: all_campaign[index],
+        id: all_campaign[index]._id,
       };
-      if (response.status === 200) {
-        const origin_data = response.data.data;
-        // console.log("==========DATA===========", origin_data);
-        req.data = origin_data;
-        if (
-          origin_data.status === "pending" ||
-          origin_data.status === "canceled"
-        ) {
-          await runTest(req, res, next);
-        }
-      } else throw new ApiError(400, "BAD REQUEST");
+      req.data = all_campaign[index];
+      await runTest(req, res, next);
+
       index++;
     }
   } catch (error) {

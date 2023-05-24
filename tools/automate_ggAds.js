@@ -1023,13 +1023,75 @@ const nextAction = async (DATA, driver, userId, id) => {
 };
 // handle run campaign gg ads
 const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
-  const { id } = req.body;
+  const { data } = req.body;
   try {
-    const response = await axios.get(
-      backend_campaign_url + url.CAMPAIGN + "/" + id
-    );
-    if (response.status === 200) {
-      const origin_data = response.data.data;
+    const origin_data = data;
+    let formattedDate = new Date(origin_data.start_date)
+      .toISOString()
+      .slice(0, 10);
+    let location_target = [];
+    let locations = [];
+    if (origin_data.location_to_target === "Enter another location") {
+      const ex_locations = origin_data.ex_locations;
+      const target_location = origin_data.locations;
+      const location_types_01 =
+        target_location &&
+        target_location
+          .map((i) => "target")
+          .filter((m) => m !== undefined && m !== null);
+      const location_types_02 =
+        target_location &&
+        ex_locations
+          .map((i) => "exclude")
+          .filter((m) => m !== undefined && m !== null);
+      if (location_types_01.length > 0 || location_types_02.length > 0) {
+        location_target = [...location_types_01, ...location_types_02];
+        locations = [...target_location, ...ex_locations];
+      }
+    }
+    const campaign_data = {
+      campaign_url: origin_data.campaign_url,
+      campaign_name: origin_data.campaign_name,
+      app_id: origin_data.product,
+      package_name: origin_data.package_name,
+      bidding_focus: origin_data.bidding_focus,
+      track_install_volume: origin_data.track_install_volume,
+      location_to_target: origin_data.location_to_target,
+      location_target: location_target,
+      locations: locations,
+      languages: origin_data.languages,
+      budget: origin_data.budget,
+      type_app: origin_data.type_app,
+      startDate: {
+        date: formattedDate,
+        time: "00:00",
+      },
+      desc: origin_data.ads_groups[0].desc,
+      ads_group_id: origin_data.ads_groups[0]._id,
+      videos: origin_data.ads_groups[0].videos,
+      headline: origin_data.ads_groups[0].headline,
+      ads_group_name: origin_data.ads_groups[0].ads_group_name,
+      bidding: origin_data.bidding,
+      images: origin_data.ads_groups[0].images,
+    };
+    // console.log('==========DATA===========', campaign_data)
+    req.data = campaign_data;
+    req.body = {
+      ...req.body,
+      id: origin_data._id,
+    };
+    await runTest(req, res, next);
+  } catch (error) {
+    throw new ApiError(400, "BAD REQUEST");
+  }
+});
+const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
+  const { all_campaign } = req.body;
+  // console.log("first", all_campaign);
+  try {
+    let index = 0;
+    while (index < all_campaign.length) {
+      const origin_data = all_campaign[index];
       // console.log("origin_data", origin_data);
       let formattedDate = new Date(origin_data.start_date)
         .toISOString()
@@ -1071,93 +1133,22 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
           date: formattedDate,
           time: "00:00",
         },
-        desc: origin_data.ads_groups[0].desc,
         ads_group_id: origin_data.ads_groups[0]._id,
+        desc: origin_data.ads_groups[0].desc,
         videos: origin_data.ads_groups[0].videos,
         headline: origin_data.ads_groups[0].headline,
         ads_group_name: origin_data.ads_groups[0].ads_group_name,
         bidding: origin_data.bidding,
-        images: origin_data.ads_groups[0].images,
       };
-      // console.log('==========DATA===========', campaign_data)
+      console.log("==========DATA===========", campaign_data);
       req.data = campaign_data;
-      if (origin_data.status === "pending" || origin_data.status === "canceled")
-        await runTest(req, res, next);
-    } else throw new ApiError(400, "BAD REQUEST");
-  } catch (error) {
-    throw new ApiError(400, "BAD REQUEST");
-  }
-});
-const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
-  const { all_campaign } = req.body;
-  try {
-    let index = 0;
-    while (index < all_campaign.length) {
-      const response = await axios.get(
-        backend_campaign_url + url.CAMPAIGN + "/" + all_campaign[index]
-      );
-      if (response.status === 200) {
-        const origin_data = response.data.data;
-        // console.log("origin_data", origin_data);
-        let formattedDate = new Date(origin_data.start_date)
-          .toISOString()
-          .slice(0, 10);
-        let location_target = [];
-        let locations = [];
-        if (origin_data.location_to_target === "Enter another location") {
-          const ex_locations = origin_data.ex_locations;
-          const target_location = origin_data.locations;
-          const location_types_01 =
-            target_location &&
-            target_location
-              .map((i) => "target")
-              .filter((m) => m !== undefined && m !== null);
-          const location_types_02 =
-            target_location &&
-            ex_locations
-              .map((i) => "exclude")
-              .filter((m) => m !== undefined && m !== null);
-          if (location_types_01.length > 0 || location_types_02.length > 0) {
-            location_target = [...location_types_01, ...location_types_02];
-            locations = [...target_location, ...ex_locations];
-          }
-        }
-        const campaign_data = {
-          campaign_url: origin_data.campaign_url,
-          campaign_name: origin_data.campaign_name,
-          app_id: origin_data.product,
-          package_name: origin_data.package_name,
-          bidding_focus: origin_data.bidding_focus,
-          track_install_volume: origin_data.track_install_volume,
-          location_to_target: origin_data.location_to_target,
-          location_target: location_target,
-          locations: locations,
-          languages: origin_data.languages,
-          budget: origin_data.budget,
-          type_app: origin_data.type_app,
-          startDate: {
-            date: formattedDate,
-            time: "00:00",
-          },
-          ads_group_id: origin_data.ads_groups[0]._id,
-          desc: origin_data.ads_groups[0].desc,
-          videos: origin_data.ads_groups[0].videos,
-          headline: origin_data.ads_groups[0].headline,
-          ads_group_name: origin_data.ads_groups[0].ads_group_name,
-          bidding: origin_data.bidding,
-        };
-        // console.log("==========DATA===========", campaign_data);
-        req.data = campaign_data;
-        req.body = {
-          ...req.body,
-          id: all_campaign[index],
-        };
-        if (
-          origin_data.status === "pending" ||
-          origin_data.status === "canceled"
-        )
-          await runTest(req, res, next);
-      } else throw new ApiError(400, "BAD REQUEST");
+
+      req.body = {
+        ...req.body,
+        id: all_campaign[index]._id,
+      };
+
+      await runTest(req, res, next);
       index++;
     }
   } catch (error) {
