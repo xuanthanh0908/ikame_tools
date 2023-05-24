@@ -25,11 +25,15 @@ const diff = (a, b) => {
 
 // handle update status
 const creativeHistory = async (data) => {
-  try {
-    await axios.post(backend_campaign_url + url.HISTORY + "/", data);
-  } catch (error) {
-    console.log("===========API ERROR=================", error);
-  }
+  return new Promise(async (resolve, reject) => {
+    try {
+      await axios.post(backend_campaign_url + url.HISTORY + "/", data);
+      resolve("OK");
+    } catch (error) {
+      reject(error);
+      console.log("===========API ERROR=================", error);
+    }
+  });
 };
 // handle update status
 const updateCreative = async (
@@ -275,28 +279,32 @@ const handeleStep_03 = async (
                                       await btn_save.click().then(async () => {
                                         const btn_close_process_path =
                                           "//ytcp-button[@id='close-button']";
-                                        fs.unlink(file_path, (err) => {
-                                          if (err) {
-                                            console.error(
-                                              "Error deleting file:",
-                                              err
-                                            );
-                                          } else {
-                                            const data = {
-                                              product_id: DATA.product_id,
-                                              channel_id: DATA.channel_id,
-                                              created_by: userId,
-                                              youtube_url: {
-                                                file_name: title_,
-                                                url: url,
-                                              },
-                                            };
-                                            creativeHistory(data);
-                                            console.log(
-                                              "File deleted successfully"
-                                            );
-                                          }
-                                        });
+                                        const data = {
+                                          product_id: DATA.product_id,
+                                          channel_id: DATA.channel_id,
+                                          created_by: userId,
+                                          youtube_url: {
+                                            file_name: title_,
+                                            url: url,
+                                          },
+                                        };
+                                        creativeHistory(data)
+                                          .then(async () => {
+                                            fs.unlink(file_path, (err) => {
+                                              if (err) {
+                                                console.error(
+                                                  "Error deleting file:",
+                                                  err
+                                                );
+                                              } else {
+                                                console.log(
+                                                  "File deleted successfully"
+                                                );
+                                              }
+                                            });
+                                          })
+                                          .catch(reject);
+
                                         await driver
                                           .wait(
                                             until.elementLocated({
