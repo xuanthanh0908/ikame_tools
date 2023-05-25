@@ -1,4 +1,4 @@
-const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
+const { By, Key, until } = require("selenium-webdriver");
 const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
@@ -13,7 +13,6 @@ const url = {
   YOUTUBE: "/youtube",
   HISTORY: "/history",
 };
-// const numBrowsers = 9;
 let x = 0,
   y = 0;
 // Create an array to store the WebDriver instances for each browser
@@ -73,11 +72,13 @@ const updateCreativeYTB = async (
     });
   }
 };
+
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
+
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {
   const { id, userId } = req.body;
@@ -117,7 +118,10 @@ const run_Now = (req, res, next, driver) => {
                             await element.click().then(async () => {
                               handeleStep_02(DATA, driver, req, res, next)
                                 .then(() => resolve("success"))
-                                .catch(reject);
+                                .catch(async (error) => {
+                                  // await driver.quit();
+                                  reject(error);
+                                });
                             });
                           }
                         });
@@ -140,6 +144,11 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
     try {
       let videos = [];
       const files = fs.readdirSync(DATA.video_path);
+      if (files.length === 0) {
+        await driver.quit();
+        updateCreativeYTB(id, "canceled", userId, "No video in folder");
+        return;
+      }
       const title = files.map((file) => file);
       const filePaths = files.map((file) => `${DATA.video_path}\\${file}`);
       for (const [index, filePath] of filePaths.entries()) {
@@ -166,11 +175,16 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
             emitEvent("progress-ytb", data);
             await updateCreative(id, data, userId);
           })
-          .catch(reject);
+          .catch(async (error) => {
+            // await driver.quit();
+            reject(error);
+          });
       }
     } catch (error) {
       updateCreativeYTB(id, "canceled", userId);
       reject(error);
+    } finally {
+      await driver.quit();
     }
   });
 };
@@ -209,143 +223,148 @@ const handeleStep_03 = async (
             const condition_02 = until.elementLocated({
               xpath: input_title_path,
             });
-            await driver.wait(condition_02, max_time).then(async () => {
-              /// handle title input
-              const title = await driver.findElement(
-                By.xpath(input_title_path)
-              );
-              await clearInput(title);
-              await title.sendKeys(title_);
+            await driver
+              .wait(condition_02, max_time)
+              .then(async () => {
+                /// handle title input
+                const title = await driver.findElement(
+                  By.xpath(input_title_path)
+                );
+                await clearInput(title);
+                await title.sendKeys(title_);
 
-              /////////////////////////////
-              // handle choose options - for children
-              const options_path = "(//div[@id='radioLabel'])[2]";
-              await driver.findElement(By.xpath(options_path)).click();
-              // handle next button
-              const btn_next_path = "(//button[@id='step-badge-3'])[1]";
-              await driver.findElement(By.xpath(btn_next_path)).click();
+                /////////////////////////////
+                // handle choose options - for children
+                const options_path = "(//div[@id='radioLabel'])[2]";
+                await driver.findElement(By.xpath(options_path)).click();
+                // handle next button
+                const btn_next_path = "(//button[@id='step-badge-3'])[1]";
+                await driver.findElement(By.xpath(btn_next_path)).click();
 
-              ///// handle last step upload video
-              const save_or_pb_unlisted_path =
-                "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
-              await driver
-                .wait(
-                  until.elementsLocated({
-                    xpath: save_or_pb_unlisted_path,
-                  }),
-                  max_time
-                )
-                .then(async () => {
-                  const btn_save_css = "#done-button[aria-disabled=false]";
-                  const condition_03 = until.elementsLocated({
-                    css: btn_save_css,
-                  });
-                  await driver.wait(condition_03, max_time).then(async () => {
-                    await driver
-                      .findElement(By.xpath(save_or_pb_unlisted_path))
-                      .click();
-                    const btn_save = await driver.findElement(
-                      By.css(btn_save_css)
-                    );
-                    await driver
-                      .wait(until.elementIsEnabled(btn_save), max_time)
-                      .then(async () => {
-                        await driver.sleep(1000).then(async () => {
-                          // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
-                          const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
-                          await driver
-                            .wait(
-                              until.elementLocated(By.css(btn_copy_css)),
-                              max_time
-                            )
-                            .then(async () => {
-                              const url_className =
-                                ".style-scope.ytcp-video-info[target='_blank']";
-                              await driver
-                                .wait(
-                                  until.elementLocated(By.css(url_className)),
-                                  max_time
-                                )
-                                .then(async () => {
-                                  await driver
-                                    .findElement(By.css(url_className))
-                                    .getAttribute("href")
-                                    .then(async (url) => {
-                                      // videos.push({
-                                      //   file_name: title_,
-                                      //   url: url,
-                                      // });
-
-                                      await btn_save.click().then(async () => {
-                                        const btn_close_process_path =
-                                          "//ytcp-button[@id='close-button']";
-                                        const data = {
-                                          product_id: DATA.product_id,
-                                          channel_id: DATA.channel_id,
-                                          created_by: userId,
-                                          youtube_url: {
-                                            file_name: title_,
-                                            url: url,
-                                          },
-                                        };
-                                        creativeHistory(data)
+                ///// handle last step upload video
+                const save_or_pb_unlisted_path =
+                  "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
+                await driver
+                  .wait(
+                    until.elementsLocated({
+                      xpath: save_or_pb_unlisted_path,
+                    }),
+                    max_time
+                  )
+                  .then(async () => {
+                    const btn_save_css = "#done-button[aria-disabled=false]";
+                    const condition_03 = until.elementsLocated({
+                      css: btn_save_css,
+                    });
+                    await driver.wait(condition_03, max_time).then(async () => {
+                      await driver
+                        .findElement(By.xpath(save_or_pb_unlisted_path))
+                        .click();
+                      const btn_save = await driver.findElement(
+                        By.css(btn_save_css)
+                      );
+                      await driver
+                        .wait(until.elementIsEnabled(btn_save), max_time)
+                        .then(async () => {
+                          await driver.sleep(1000).then(async () => {
+                            // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
+                            const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
+                            await driver
+                              .wait(
+                                until.elementLocated(By.css(btn_copy_css)),
+                                max_time
+                              )
+                              .then(async () => {
+                                const url_className =
+                                  ".style-scope.ytcp-video-info[target='_blank']";
+                                await driver
+                                  .wait(
+                                    until.elementLocated(By.css(url_className)),
+                                    max_time
+                                  )
+                                  .then(async () => {
+                                    await driver
+                                      .findElement(By.css(url_className))
+                                      .getAttribute("href")
+                                      .then(async (url) => {
+                                        await btn_save
+                                          .click()
                                           .then(async () => {
-                                            fs.unlink(file_path, (err) => {
-                                              if (err) {
-                                                console.error(
-                                                  "Error deleting file:",
-                                                  err
-                                                );
-                                              } else {
-                                                console.log(
-                                                  "File deleted successfully"
-                                                );
-                                              }
-                                            });
-                                          })
-                                          .catch(reject);
-
-                                        await driver
-                                          .wait(
-                                            until.elementLocated({
-                                              xpath: btn_close_process_path,
-                                            }),
-                                            max_time
-                                          )
-                                          .then(async () => {
-                                            await driver
-                                              .findElement(
-                                                By.xpath(btn_close_process_path)
-                                              )
-                                              .click()
+                                            const btn_close_process_path =
+                                              "//ytcp-button[@id='close-button']";
+                                            const data = {
+                                              product_id: DATA.product_id,
+                                              channel_id: DATA.channel_id,
+                                              created_by: userId,
+                                              youtube_url: {
+                                                file_name: title_,
+                                                url: url,
+                                              },
+                                            };
+                                            creativeHistory(data)
                                               .then(async () => {
-                                                resolve("success");
-                                                if (index === count - 1) {
-                                                  // file_path
-                                                  /// remove a file after upload
-                                                  updateCreativeYTB(
-                                                    id,
-                                                    "completed",
-                                                    userId
-                                                  );
-                                                  await driver.quit();
-                                                }
+                                                fs.unlink(file_path, (err) => {
+                                                  if (err) {
+                                                    console.error(
+                                                      "Error deleting file:",
+                                                      err
+                                                    );
+                                                  } else {
+                                                    console.log(
+                                                      "File deleted successfully"
+                                                    );
+                                                  }
+                                                });
+                                              })
+                                              .catch(reject);
+                                            await driver
+                                              .wait(
+                                                until.elementLocated({
+                                                  xpath: btn_close_process_path,
+                                                }),
+                                                max_time
+                                              )
+                                              .then(async () => {
+                                                await driver
+                                                  .findElement(
+                                                    By.xpath(
+                                                      btn_close_process_path
+                                                    )
+                                                  )
+                                                  .click()
+                                                  .then(async () => {
+                                                    resolve("success");
+                                                    if (index === count - 1) {
+                                                      /// remove a file after upload
+                                                      updateCreativeYTB(
+                                                        id,
+                                                        "completed",
+                                                        userId
+                                                      );
+                                                      // await driver.quit();
+                                                    }
+                                                  })
+                                                  .catch(reject);
                                               })
                                               .catch(reject);
                                           });
                                       });
-                                    });
-                                })
-                                .catch(reject);
-                            });
-                        });
-                      });
-                  });
-                });
-            });
+                                  })
+                                  .catch(reject);
+                              })
+                              .catch(reject);
+                          });
+                        })
+                        .catch(reject);
+                    });
+                  })
+                  .catch(reject);
+              })
+              .catch(reject);
           });
       });
     } catch (error) {
+      // await driver.quit();
       updateCreativeYTB(id, "canceled", userId);
       console.log(error);
       reject(error);
@@ -369,6 +388,13 @@ const openBrowserWindow = async (data, index) => {
           .setFirefoxOptions(options)
           .build();
         // Add the driver instance to the array
+
+        // const windowHandles = await driver.getAllWindowHandles();
+        // const numberOfOpenBrowsers = windowHandles.length;
+
+        // if (numberOfOpenBrowsers > 0) {
+        //   return;
+        // }
         drivers.push(driver);
 
         // Get the window size
@@ -412,9 +438,7 @@ const openBrowserWindow = async (data, index) => {
         // console.log("DATA", data[index]);
         const res = null;
         const next = null;
-        run_Now(req, res, next, driver).catch(async () => {
-          await driver.quit();
-        });
+        run_Now(req, res, next, driver);
       } catch (error) {
         reject(error);
       }
@@ -429,42 +453,6 @@ const openMultipleBrowsers = async (data) => {
   }
 };
 ///////////////////////////
-// handle run single creative youtube
-const handleFetchData = async (req, res, next) => {
-  const { id } = req.body;
-  let campaign_can_run = [];
-  try {
-    const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "/" + id
-    );
-    if (response.status === 200) {
-      const origin_data = response.data.data;
-      // console.log("==========DATA===========", origin_data);
-      req.data = origin_data;
-      if (origin_data.status === "pending" || origin_data.status === "canceled")
-        campaign_can_run.push({
-          data: origin_data,
-          body: req.body,
-        });
-      /// reset x, y
-      x = 0;
-      y = 0;
-      if (campaign_can_run.length > 0) {
-        // Example usage
-        openMultipleBrowsers(campaign_can_run)
-          .then(() => {
-            // Do something after opening the browsers
-            console.log("Browsers opened successfully");
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-          });
-      }
-    } else throw new ApiError(400, "BAD REQUEST");
-  } catch (error) {
-    throw new ApiError(400, "BAD REQUEST");
-  }
-};
 // handle run multiple creative youtube
 // const handMultiFetchYTB = async (req, res, next) => {
 //   const { all_campaign } = req.body;
@@ -558,14 +546,14 @@ const handleFetchData = async (req, res, next) => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=App"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
+      console.log(origin_data);
       /// reset x, y
       x = 0;
       y = 0;
-
       if (origin_data.length > 0) {
         openMultipleBrowsers(origin_data)
           .then(() => {
@@ -586,14 +574,14 @@ const handMultiFetchYTB = async () => {
 // run_Now();
 const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
-  crontab.scheduleJob("*/5 * * * *", function () {
+  crontab.scheduleJob("*/1 * * * *", function () {
     console.log("====== CRON JOB RUN ======");
     handMultiFetchYTB();
   });
   // handMultiFetchYTB();
 };
 module.exports = {
-  handleFetchData,
+  // handleFetchData,
   handMultiFetchYTB,
   scheduleRun,
 };
