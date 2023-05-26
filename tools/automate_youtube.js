@@ -7,21 +7,26 @@ const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const crontab = require("node-crontab");
 const fs = require("fs");
+const Queue = require("../utils/queue");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
+
 const url = {
   YOUTUBE: "/youtube",
   HISTORY: "/history",
 };
+const q = new Queue();
 let x = 0,
   y = 0;
 // Create an array to store the WebDriver instances for each browser
-const drivers = [];
+let drivers = [];
 
 const diff = (a, b) => {
   return Math.abs(a - b);
 };
-
+const checkBrowserOpened = async () => {
+  return drivers.length > 0;
+};
 // handle update status
 const creativeHistory = async (data) => {
   return new Promise(async (resolve, reject) => {
@@ -30,7 +35,12 @@ const creativeHistory = async (data) => {
       resolve("OK");
     } catch (error) {
       reject(error);
-      console.log("===========API ERROR=================", error);
+      // if(error.response.status === 404) {
+      //   console.log("THERE ARE NO RECODES TO");
+      // }else {
+      //   console.log("NETWORK ERROR");
+
+      // }
     }
   });
 };
@@ -44,7 +54,7 @@ const updateCreative = async (
   try {
     await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
   } catch (error) {
-    console.log("===========API ERROR=================", error);
+    console.log("===========API ERROR=================");
   }
 };
 // handle update status
@@ -64,7 +74,7 @@ const updateCreativeYTB = async (
       userId,
     });
   } catch (error) {
-    console.log("===========API ERROR=================", error);
+    // console.log("===========API ERROR=================", error);
     emitEvent("message", {
       message,
       type: "run test failed",
@@ -89,6 +99,8 @@ const run_Now = (req, res, next, driver) => {
       await driver.get("https://studio.youtube.com");
       /// change channel
       const chanel_path = "//button[@id='avatar-btn']";
+      /// update status is running
+      updateCreativeYTB(id, "running", userId);
       await driver
         .findElement(By.xpath(chanel_path))
         .click()
@@ -185,6 +197,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       reject(error);
     } finally {
       await driver.quit();
+      drivers.splice(drivers.indexOf(driver), 1);
     }
   });
 };
@@ -446,142 +459,59 @@ const openBrowserWindow = async (data, index) => {
   });
 };
 // Open multiple browser windows
-const openMultipleBrowsers = async (data) => {
-  const numBrowsers = data.length;
-  for (let i = 0; i < numBrowsers; i++) {
-    await openBrowserWindow(data, i);
+const openMultipleBrowsers = async () => {
+  // console.log("drivers", drivers);
+  if (q.q.length > 0) {
+    const data = q.receive();
+    const numBrowsers = data.length;
+    for (let i = 0; i < numBrowsers; i++) {
+      await openBrowserWindow(data, i);
+    }
   }
 };
 ///////////////////////////
 // handle run multiple creative youtube
-// const handMultiFetchYTB = async (req, res, next) => {
-//   const { all_campaign } = req.body;
-
-//   // const max_browser = 2;
-//   const campaign_can_run = [];
-//   // console.log("======ALL CAMPAIGN======", all_campaign);
-//   try {
-//     let index = 0;
-//     while (index < all_campaign.length) {
-//       // console.log("======ID======", all_campaign[index]);
-//       const response = await axios.get(
-//         backend_campaign_url + url.YOUTUBE + "/" + all_campaign[index]
-//       );
-//       req.body = {
-//         ...req.body,
-//         id: all_campaign[index],
-//       };
-//       if (response.status === 200) {
-//         const origin_data = response.data.data;
-//         // console.log("==========DATA===========", origin_data);
-//         req.data = origin_data;
-//         if (
-//           origin_data.status === "pending" ||
-//           origin_data.status === "canceled"
-//         ) {
-//           campaign_can_run.push({
-//             data: origin_data,
-//             body: req.body,
-//           });
-//         }
-//       } else throw new ApiError(400, "BAD REQUEST");
-//       index++;
-//     }
-//     /// reset x, y
-//     x = 0;
-//     y = 0;
-
-//     if (campaign_can_run.length > 0) {
-//       // Example usage
-
-//       /// 17
-//       /// start = 0, end = 4
-//       //// arr = 0 - 4
-//       /// start = 4, end = 8
-//       //// arr = 4 - 8
-//       /// start = 8, end = 12
-//       //// arr = 8 - 12
-//       /// start = 12, end = 13
-//       /// arr = 12 - 16
-//       /// start = 16, end = 17
-//       // let start = 0;
-//       // let end = max_browser;
-//       // let arr = [];
-//       // let loop = Math.ceil(campaign_can_run.length / max_browser);
-//       // for (let i = 0; i < loop; i++) {
-//       //   if (end > campaign_can_run.length) {
-//       //     end = campaign_can_run.length;
-//       //   }
-//       //   arr.push(campaign_can_run.slice(start, end));
-//       //   start = end;
-//       //   end += max_browser;
-//       // }
-
-//       // while (arr.length > 0) {
-//       //   const arr_item = arr.shift();
-//       //   openMultipleBrowsers(arr_item)
-//       //     .then(() => {
-//       //       // Do something after opening the browsers
-//       //       console.log("Browsers opened successfully");
-//       //     })
-//       //     .catch((error) => {
-//       //       console.error("Error:", error);
-//       //     });
-//       // }
-//       openMultipleBrowsers(campaign_can_run)
-//         .then(() => {
-//           // Do something after opening the browsers
-//           console.log("Browsers opened successfully");
-//         })
-//         .catch((error) => {
-//           console.error("Error:", error);
-//         });
-//     }
-//   } catch (error) {
-//     console.log("======ERROR======", error);
-//     throw new ApiError(400, "BAD REQUEST");
-//   }
-// };
-// handle run multiple creative youtube
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=App"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
-      console.log(origin_data);
+      q.send(origin_data);
       /// reset x, y
       x = 0;
       y = 0;
-      if (origin_data.length > 0) {
-        openMultipleBrowsers(origin_data)
-          .then(() => {
-            // Do something after opening the browsers
-            console.log("Browsers opened successfully");
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-          });
-      }
+      openMultipleBrowsers()
+        .then(() => {
+          // Do something after opening the browsers
+          console.log("Browsers opened successfully");
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
       // console.log("==========DATA===========", origin_data);
     } else throw new ApiError(400, "BAD REQUEST");
   } catch (error) {
-    console.log("======ERROR======", error);
+    // console.log("======ERROR======", error);
     throw new ApiError(400, "BAD REQUEST");
   }
 };
 // run_Now();
 const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
-  crontab.scheduleJob("*/1 * * * *", function () {
+  crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
-    handMultiFetchYTB();
+    const checkOpened = await checkBrowserOpened();
+    if (!checkOpened) {
+      handMultiFetchYTB();
+    } else {
+      console.log("BROWSER OPENED");
+    }
   });
   // handMultiFetchYTB();
 };
 module.exports = {
-  // handleFetchData,
   handMultiFetchYTB,
   scheduleRun,
 };

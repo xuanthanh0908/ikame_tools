@@ -1,4 +1,4 @@
-const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
+const { By, Key, until } = require("selenium-webdriver");
 const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
