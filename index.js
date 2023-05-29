@@ -18,7 +18,7 @@ const {
 const {
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
-} = require("./tools/automate_add_Asset");
+} = require("./tools/automate_add_Adgroup");
 const {
   handleFetchData,
   handMultiFetchYTB,
@@ -78,13 +78,7 @@ const automateAdsGroup = catchAsync(async (req, res, next) => {
   } else await handFetchAdsGroup(req, res, next);
   res.status(200).send({ message: "success" });
 });
-const automateCreativeYoutube = catchAsync(async (req, res, next) => {
-  const { isMulti } = req.body;
-  res.status(200).send({ message: "success" });
-  if (isMulti) {
-    await handMultiFetchYTB(req, res, next);
-  } else await handleFetchData(req, res, next);
-});
+
 const automateCreativePlaylist = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   res.status(200).send({ message: "success" });
@@ -98,7 +92,7 @@ app.post("/tool/playlist", automateCreativePlaylist);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
 // app.post("/tool/creative-youtube", automateCreativeYoutube);
-scheduleRun();
+// scheduleRun();
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
   next(new ApiError(404, "Not found"));

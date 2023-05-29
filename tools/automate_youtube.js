@@ -400,14 +400,7 @@ const openBrowserWindow = async (data, index) => {
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-        // Add the driver instance to the array
 
-        // const windowHandles = await driver.getAllWindowHandles();
-        // const numberOfOpenBrowsers = windowHandles.length;
-
-        // if (numberOfOpenBrowsers > 0) {
-        //   return;
-        // }
         drivers.push(driver);
 
         // Get the window size
