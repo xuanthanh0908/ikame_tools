@@ -2,32 +2,22 @@ const http = require("http");
 const helmet = require("helmet");
 const express = require("express");
 const {
+  handleFetchApiGgAds,
+  handleFetchMultiApiGgAds,
+  handFetchAdsGroup,
+  handMultiFetchAdsGroup,
   handleFetchApi,
   handleMultiFetchApi,
-} = require("./tools/automate_titktok");
+  handFetchCreativePlaylist,
+  handMultiFetchCreativePlaylist,
+} = require("./tools/");
 const cors = require("cors");
 const socketIo = require("socket.io");
 const ApiError = require("./utils/apiError");
 const catchAsync = require("./utils/catchAsync");
 const { errorConverter, errorHandler } = require("./utils/error");
 const { socketHandler } = require("./socket");
-const {
-  handleFetchApiGgAds,
-  handleFetchMultiApiGgAds,
-} = require("./tools/automate_ggAds");
-const {
-  handFetchAdsGroup,
-  handMultiFetchAdsGroup,
-} = require("./tools/automate_add_Adgroup");
-const {
-  handleFetchData,
-  handMultiFetchYTB,
-  scheduleRun,
-} = require("./tools/automate_youtube");
-const {
-  handFetchCreativePlaylist,
-  handMultiFetchCreativePlaylist,
-} = require("./tools/automate_addPlaylist");
+
 const Server = socketIo.Server;
 const app = express();
 let server;
@@ -73,6 +63,7 @@ const createCampaignGgAds = catchAsync(async (req, res, next) => {
 
 const automateAdsGroup = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
+  // console.log(req.body);
   if (isMulti) {
     await handMultiFetchAdsGroup(req, res, next);
   } else await handFetchAdsGroup(req, res, next);
