@@ -132,6 +132,7 @@ const run_Now = (req, res, next, driver) => {
                                 .then(() => resolve("success"))
                                 .catch(async (error) => {
                                   // await driver.quit();
+                                  drivers = [];
                                   reject(error);
                                 });
                             });
@@ -143,6 +144,7 @@ const run_Now = (req, res, next, driver) => {
             });
         });
     } catch (error) {
+      drivers = [];
       updateCreativeYTB(id, "canceled", userId);
       console.log("RUN TEST FAILED", error);
     }
@@ -189,6 +191,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
           })
           .catch(async (error) => {
             // await driver.quit();
+            drivers = [];
             reject(error);
           });
       }
@@ -357,26 +360,48 @@ const handeleStep_03 = async (
                                                       // await driver.quit();
                                                     }
                                                   })
-                                                  .catch(reject);
+                                                  .catch((err) => {
+                                                    reject(err);
+                                                    drivers = [];
+                                                  });
                                               })
-                                              .catch(reject);
+                                              .catch((err) => {
+                                                reject(err);
+                                                drivers = [];
+                                              });
                                           });
                                       });
                                   })
-                                  .catch(reject);
+                                  .catch((err) => {
+                                    reject(err);
+                                    drivers = [];
+                                  });
                               })
-                              .catch(reject);
+                              .catch((err) => {
+                                reject(err);
+                                drivers = [];
+                              });
                           });
                         })
-                        .catch(reject);
+                        .catch((err) => {
+                          reject(err);
+                          drivers = [];
+                        });
                     });
                   })
-                  .catch(reject);
+                  .catch((err) => {
+                    reject(err);
+                    drivers = [];
+                  });
               })
-              .catch(reject);
+              .catch((err) => {
+                reject(err);
+                drivers = [];
+              });
           });
       });
     } catch (error) {
+      drivers = [];
       // await driver.quit();
       updateCreativeYTB(id, "canceled", userId);
       console.log(error);
@@ -446,6 +471,7 @@ const openBrowserWindow = async (data, index) => {
         const next = null;
         run_Now(req, res, next, driver);
       } catch (error) {
+        drivers = [];
         reject(error);
       }
     });

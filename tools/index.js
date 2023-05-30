@@ -14,7 +14,7 @@ const {
   handleFetchApi,
   handleMultiFetchApi,
 } = require("../tools/automate_titktok");
-
+const { scheduleRun } = require("../tools/automate_youtube");
 module.exports = {
   handleFetchApiGgAds,
   handleFetchMultiApiGgAds,
@@ -24,4 +24,5 @@ module.exports = {
   handleMultiFetchApi,
   handFetchCreativePlaylist,
   handMultiFetchCreativePlaylist,
+  scheduleRun,
 };
