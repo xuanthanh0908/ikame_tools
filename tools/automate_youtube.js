@@ -24,6 +24,16 @@ let drivers = [];
 const diff = (a, b) => {
   return Math.abs(a - b);
 };
+const handleRemoveFile = (path) => {
+  fs.unlink(path, (err) => {
+    if (err) {
+      console.error("Error deleting file:", err);
+      drivers = [];
+    } else {
+      console.log("File deleted successfully");
+    }
+  });
+};
 const checkBrowserOpened = async () => {
   return drivers.length > 0;
 };
@@ -34,13 +44,8 @@ const creativeHistory = async (data) => {
       await axios.post(backend_campaign_url + url.HISTORY + "/", data);
       resolve("OK");
     } catch (error) {
+      drivers = [];
       reject(error);
-      // if(error.response.status === 404) {
-      //   console.log("THERE ARE NO RECODES TO");
-      // }else {
-      //   console.log("NETWORK ERROR");
-
-      // }
     }
   });
 };
@@ -54,6 +59,7 @@ const updateCreative = async (
   try {
     await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
   } catch (error) {
+    drivers = [];
     console.log("===========API ERROR=================");
   }
 };
@@ -65,24 +71,31 @@ const updateCreativeYTB = async (
   message = "Run test failed"
 ) => {
   try {
-    await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, {
-      status: status,
-    });
+    const res = await axios.patch(
+      backend_campaign_url + url.YOUTUBE + "/" + id,
+      {
+        status: status,
+      }
+    );
     emitEvent("message", {
       message: "run test success",
       type: "success",
       userId,
     });
+    if (res?.data?.success) {
+      return Promise.resolve(res);
+    } else return Promise.reject("failed");
   } catch (error) {
+    drivers = [];
     // console.log("===========API ERROR=================", error);
     emitEvent("message", {
       message,
       type: "run test failed",
       userId,
     });
+    return Promise.reject(error);
   }
 };
-
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
@@ -100,7 +113,7 @@ const run_Now = (req, res, next, driver) => {
       /// change channel
       const chanel_path = "//button[@id='avatar-btn']";
       /// update status is running
-      updateCreativeYTB(id, "running", userId);
+      await updateCreativeYTB(id, "running", userId);
       await driver
         .findElement(By.xpath(chanel_path))
         .click()
@@ -145,7 +158,7 @@ const run_Now = (req, res, next, driver) => {
         });
     } catch (error) {
       drivers = [];
-      updateCreativeYTB(id, "canceled", userId);
+      await updateCreativeYTB(id, "canceled", userId);
       console.log("RUN TEST FAILED", error);
     }
   });
@@ -160,7 +173,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       const files = fs.readdirSync(DATA.video_path);
       if (files.length === 0) {
         await driver.quit();
-        updateCreativeYTB(id, "canceled", userId, "No video in folder");
+        await updateCreativeYTB(id, "canceled", userId, "No video in folder");
         return;
       }
       const title = files.map((file) => file);
@@ -196,7 +209,8 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
           });
       }
     } catch (error) {
-      updateCreativeYTB(id, "canceled", userId);
+      drivers = [];
+      await updateCreativeYTB(id, "canceled", userId);
       reject(error);
     } finally {
       await driver.quit();
@@ -303,6 +317,11 @@ const handeleStep_03 = async (
                                       .findElement(By.css(url_className))
                                       .getAttribute("href")
                                       .then(async (url) => {
+                                        if (!url || url.length === 0) {
+                                          reject(err);
+                                          drivers = [];
+                                          return;
+                                        }
                                         await btn_save
                                           .click()
                                           .then(async () => {
@@ -319,20 +338,12 @@ const handeleStep_03 = async (
                                             };
                                             creativeHistory(data)
                                               .then(async () => {
-                                                fs.unlink(file_path, (err) => {
-                                                  if (err) {
-                                                    console.error(
-                                                      "Error deleting file:",
-                                                      err
-                                                    );
-                                                  } else {
-                                                    console.log(
-                                                      "File deleted successfully"
-                                                    );
-                                                  }
-                                                });
+                                                handleRemoveFile(file_path);
                                               })
-                                              .catch(reject);
+                                              .catch((err) => {
+                                                reject(err);
+                                                drivers = [];
+                                              });
                                             await driver
                                               .wait(
                                                 until.elementLocated({
@@ -349,15 +360,20 @@ const handeleStep_03 = async (
                                                   )
                                                   .click()
                                                   .then(async () => {
-                                                    resolve("success");
                                                     if (index === count - 1) {
                                                       /// remove a file after upload
                                                       updateCreativeYTB(
                                                         id,
                                                         "completed",
                                                         userId
-                                                      );
-                                                      // await driver.quit();
+                                                      )
+                                                        .then(() =>
+                                                          resolve("success")
+                                                        )
+                                                        .catch((err) => {
+                                                          reject(err);
+                                                          drivers = [];
+                                                        });
                                                     }
                                                   })
                                                   .catch((err) => {
@@ -403,7 +419,7 @@ const handeleStep_03 = async (
     } catch (error) {
       drivers = [];
       // await driver.quit();
-      updateCreativeYTB(id, "canceled", userId);
+      await updateCreativeYTB(id, "canceled", userId);
       console.log(error);
       reject(error);
     }
@@ -493,7 +509,7 @@ const openMultipleBrowsers = async () => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Check"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
@@ -507,12 +523,17 @@ const handMultiFetchYTB = async () => {
           console.log("Browsers opened successfully");
         })
         .catch((error) => {
+          drivers = [];
           console.error("Error:", error);
         });
       // console.log("==========DATA===========", origin_data);
-    } else throw new ApiError(400, "BAD REQUEST");
+    } else {
+      drivers = [];
+      console.log("There are no records yet.");
+    }
   } catch (error) {
     // console.log("======ERROR======", error);
+    drivers = [];
     throw new ApiError(400, "BAD REQUEST");
   }
 };
