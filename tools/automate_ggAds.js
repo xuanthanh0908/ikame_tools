@@ -273,10 +273,9 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                   await driver.sleep(2000);
                 }
                 // handle next button
-                const next_button_path =
-                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                const next_button_path = "__acx-ripple";
                 const next = await driver.findElement(
-                  By.xpath(next_button_path)
+                  By.className(next_button_path)
                 );
                 await driver
                   .executeScript("arguments[0].click()", next)
@@ -534,13 +533,13 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                     // await driver.sleep(2000);
                     // handle next button
                     const next_button_path =
-                      "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                      ".active-module-node .button.button-next.highlighted";
                     const condition_04 = until.elementLocated({
-                      xpath: next_button_path,
+                      css: next_button_path,
                     });
                     await driver.wait(condition_04, max_time).then(async () => {
                       await driver
-                        .findElement(By.xpath(next_button_path))
+                        .findElement(By.css(next_button_path))
                         .click()
                         .then(async () => {
                           await handleStep4(DATA, driver, userId, id).then(
