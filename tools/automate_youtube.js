@@ -509,7 +509,7 @@ const openMultipleBrowsers = async () => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Check"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
@@ -532,7 +532,7 @@ const handMultiFetchYTB = async () => {
       console.log("There are no records yet.");
     }
   } catch (error) {
-    // console.log("======ERROR======", error);
+    console.log("======ERROR======", error);
     drivers = [];
     throw new ApiError(400, "BAD REQUEST");
   }

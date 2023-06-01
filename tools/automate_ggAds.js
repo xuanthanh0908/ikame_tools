@@ -192,15 +192,14 @@ const handleStep2 = async (DATA, driver, userId, id) => {
           // console.log("====================================", DATA.locations);
           for (const [index, loca] of DATA.locations.entries()) {
             console.log("============AO===========", loca);
-            //div[@class='entry _ngcontent-awn-CM_EDITING-171 active']
             const input_path_01 =
-              "//material-input[@role='combobox']//input[@type='text']";
+              ".location-search-container material-input input";
             const conditions_02 = until.elementLocated({
-              xpath: input_path_01,
+              css: input_path_01,
             });
             await driver.wait(conditions_02, max_time).then(async () => {
               await driver
-                .findElement(By.xpath(input_path_01))
+                .findElement(By.css(input_path_01))
                 .sendKeys(loca)
                 .then(async () => {
                   const location_path = "//span[@title='" + loca + "']";
@@ -1026,6 +1025,7 @@ const handleFetchApiGgAds = catchAsync(async (req, res, next) => {
   const { data } = req.body;
   try {
     const origin_data = data;
+    // console.log(data);
     let formattedDate = new Date(origin_data.start_date)
       .toISOString()
       .slice(0, 10);
