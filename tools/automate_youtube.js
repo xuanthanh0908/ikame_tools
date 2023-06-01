@@ -35,12 +35,6 @@ const creativeHistory = async (data) => {
       resolve("OK");
     } catch (error) {
       reject(error);
-      // if(error.response.status === 404) {
-      //   console.log("THERE ARE NO RECODES TO");
-      // }else {
-      //   console.log("NETWORK ERROR");
-
-      // }
     }
   });
 };
