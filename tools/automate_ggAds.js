@@ -246,14 +246,21 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                   By.css(input_language),
                 )
                 await driver.executeScript('arguments[0].click()', findLang)
-
                 // choose language
-                if (
-                  DATA.languages.length > 0 &&
-                  DATA.languages[0] !== 'All' &&
-                  DATA.languages[0] !== 'English'
-                ) {
-                  for (const lang of DATA.languages) {
+                let languageArr = [...DATA.languages]
+                if (languageArr.length > 0 && languageArr[0] !== 'All') {
+                  const EnglishDefault = 'English'
+                  const findEnglishIndex = languageArr.findIndex(
+                    (m) => m == EnglishDefault,
+                  )
+                  if (findEnglishIndex === -1) {
+                    const all_language_path =
+                      "//span[normalize-space()='" + EnglishDefault + "']"
+                    await driver
+                      .findElement(By.xpath(all_language_path))
+                      .click()
+                  } else languageArr.splice(findEnglishIndex, 1)
+                  for (const lang of languageArr) {
                     const all_language_path =
                       "//span[normalize-space()='" + lang + "']"
                     await driver
@@ -267,9 +274,12 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                   await driver.findElement(By.xpath(all_language_path)).click()
                   await driver.sleep(2000)
                 }
-                // handle next button
-                const next_button_css = "material-ripple[xpath='1']"
-                const next = await driver.findElement(By.css(next_button_css))
+                // handle next button ==== MAYBE THE PATH DOES NOT BE CHANGED
+                const next_button_path =
+                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']"
+                const next = await driver.findElement(
+                  By.xpath(next_button_path),
+                )
                 await driver
                   .executeScript('arguments[0].click()', next)
                   .then(async () => {
