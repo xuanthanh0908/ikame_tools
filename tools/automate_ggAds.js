@@ -259,18 +259,24 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                     await driver.sleep(2000)
                   }
                 } else {
-                  const all_language_path =
-                    "//span[normalize-space()='All languages']"
-                  await driver.findElement(By.xpath(all_language_path)).click()
-                  await driver.sleep(2000)
+                  if (
+                    DATA.languages.length > 0 &&
+                    DATA.languages[0] !== 'English'
+                  ) {
+                    const all_language_path =
+                      "//span[normalize-space()='All languages']"
+                    await driver
+                      .findElement(By.xpath(all_language_path))
+                      .click()
+                    await driver.sleep(2000)
+                  }
                 }
                 // handle next button
-                // handle next button
                 const next_button_path =
-                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']"
                 const next = await driver.findElement(
-                  By.xpath(next_button_path)
-                );
+                  By.xpath(next_button_path),
+                )
                 await driver
                   .executeScript('arguments[0].click()', next)
                   .then(async () => {
