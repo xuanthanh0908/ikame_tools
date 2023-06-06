@@ -9,7 +9,7 @@ const crontab = require("node-crontab");
 const fs = require("fs");
 const Queue = require("../utils/queue");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = "http://localhost:9000/api/v1";
+// const backend_campaign_url = "http://localhost:9000/api/v1"
 
 const url = {
   YOUTUBE: "/youtube",
@@ -24,32 +24,108 @@ let drivers = [];
 const diff = (a, b) => {
   return Math.abs(a - b);
 };
-const checkBrowserOpened = async () => {
+
+// handle check internet connection status
+const networkOrFail = (callFunc, callTime) => {
+  let callableTimes = callTime < 2000 ? 2000 : callTime;
+  let toursBegin = 3;
+  let tours = toursBegin;
+  let intervalId;
+  let request = function () {
+    intervalId = setInterval(
+      function () {
+        if (tours > 0) {
+          if (checkInternetConnection()) {
+            callFunc();
+            tours = 0;
+            return false;
+          }
+          tours--;
+          console.log(
+            "i tryied againt to resend for another time and it remain just " +
+              tours +
+              " to retry"
+          );
+        } else {
+          clearRequest();
+          tours = toursBegin;
+        }
+      },
+      callableTimes > 5000 ? 5000 : callableTimes
+    );
+  };
+  let clearRequest = function () {
+    clearInterval(intervalId);
+    intervalId = null;
+  };
+  if (checkInternetConnection()) callFunc();
+  else request();
+};
+
+const checkBrowserIsOpened = async () => {
   return drivers.length > 0;
 };
-// handle update status
-const creativeHistory = async (data) => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      await axios.post(backend_campaign_url + url.HISTORY + "/", data);
-      resolve("OK");
-    } catch (error) {
-      reject(error);
+const checkInternetConnection = async () => {
+  try {
+    // Create a new instance of the WebDriver
+    // Set a timeout for the fetch operation
+    const timeout = 5000;
+    // Define a URL to check internet connection
+    const url = "https://www.google.com";
+
+    // Fetch the URL and check the response status
+    const response = await axios.get(url, { timeout });
+    const status = response.status;
+
+    if (status === 200) {
+      console.log("Internet connection is available");
+    } else {
+      console.log("Internet connection is not available");
+      return false;
     }
-  });
+
+    // Quit the WebDriver session
+  } catch (error) {
+    console.log("Internet connection is not available:", error.message);
+  }
+  return true;
 };
 // handle update status
-const updateCreative = async (
-  id,
-  data,
-  userId,
-  message = "Run test failed"
-) => {
-  try {
-    await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
-  } catch (error) {
-    console.log("===========API ERROR=================");
-  }
+const creativeHistory = async (data, driver, file_path) => {
+  const makeRequest = async () => {
+    try {
+      const res = await axios.post(
+        backend_campaign_url + url.HISTORY + "/",
+        data
+      );
+      if (res.status === 201) {
+        fs.unlink(file_path, (err) => {
+          if (err) {
+            console.error("Error deleting file:", err);
+          } else {
+            console.log("File deleted successfully");
+          }
+        });
+      }
+      // resolve("OK");
+    } catch (error) {
+      await driver.quit();
+      drivers.splice(drivers.indexOf(driver), 1);
+      reject(error);
+    }
+  };
+  networkOrFail(makeRequest, 5000);
+};
+// handle update status
+const updateCreative = async (id, data) => {
+  const makeRequest = async () => {
+    try {
+      await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
+    } catch (error) {
+      console.log("===========API ERROR=================");
+    }
+  };
+  networkOrFail(makeRequest, 5000);
 };
 // handle update status
 const updateCreativeYTB = async (
@@ -58,23 +134,35 @@ const updateCreativeYTB = async (
   userId,
   message = "Run test failed"
 ) => {
-  try {
-    await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, {
-      status: status,
-    });
-    emitEvent("message", {
-      message: "run test success",
-      type: "success",
-      userId,
-    });
-  } catch (error) {
-    // console.log("===========API ERROR=================", error);
-    emitEvent("message", {
-      message,
-      type: "run test failed",
-      userId,
-    });
-  }
+  const makeRequest = async () => {
+    checked = true;
+    try {
+      const res = await axios.patch(
+        backend_campaign_url + url.YOUTUBE + "/" + id,
+        {
+          status: status,
+        }
+      );
+      if (!res) {
+        checked = false;
+      }
+      emitEvent("message", {
+        message: "run test success",
+        type: "success",
+        userId,
+      });
+    } catch (error) {
+      checked = false;
+      // console.log("===========API ERROR=================", error);
+      emitEvent("message", {
+        message,
+        type: "run test failed",
+        userId,
+      });
+    }
+    return checked;
+  };
+  networkOrFail(makeRequest, 5000);
 };
 
 /// clear input
@@ -94,7 +182,7 @@ const run_Now = (req, res, next, driver) => {
       /// change channel
       const chanel_path = "//button[@id='avatar-btn']";
       /// update status is running
-      updateCreativeYTB(id, "running", userId);
+      await updateCreativeYTB(id, "running", userId);
       await driver
         .findElement(By.xpath(chanel_path))
         .click()
@@ -137,7 +225,7 @@ const run_Now = (req, res, next, driver) => {
             });
         });
     } catch (error) {
-      updateCreativeYTB(id, "canceled", userId);
+      await updateCreativeYTB(id, "canceled", userId);
       console.log("RUN TEST FAILED", error);
     }
   });
@@ -150,11 +238,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
     try {
       let videos = [];
       const files = fs.readdirSync(DATA.video_path);
-      if (files.length === 0) {
-        await driver.quit();
-        updateCreativeYTB(id, "canceled", userId, "No video in folder");
-        return;
-      }
+
       const title = files.map((file) => file);
       const filePaths = files.map((file) => `${DATA.video_path}\\${file}`);
       for (const [index, filePath] of filePaths.entries()) {
@@ -188,7 +272,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       }
     } catch (error) {
       drivers.splice(drivers.indexOf(driver), 1);
-      updateCreativeYTB(id, "canceled", userId);
+      await updateCreativeYTB(id, "canceled", userId);
       reject(error);
     } finally {
       await driver.quit();
@@ -214,18 +298,18 @@ const handeleStep_03 = async (
   return new Promise(async (resolve, reject) => {
     try {
       // wait for button upload video showing
-      const btn_upload_path = "//ytcp-icon-button[@id='upload-icon']";
+      const btn_upload_id = "upload-icon";
       const condition = until.elementLocated({
-        xpath: btn_upload_path,
+        id: btn_upload_id,
       });
       await driver.wait(condition, max_time).then(async () => {
+        const findElBtnUpLoad = await driver.findElement(By.id(btn_upload_id));
         await driver
-          .findElement(By.xpath(btn_upload_path))
-          .click()
+          .executeScript("arguments[0].click();", findElBtnUpLoad)
           .then(async () => {
-            const input_upload_path = "//input[@name='Filedata']";
+            const input_upload_css = "input[name=Filedata]";
             await driver
-              .findElement(By.xpath(input_upload_path))
+              .findElement(By.css(input_upload_css))
               .sendKeys(file_path);
             const input_title_path = "(//div[@id='textbox'])[1]";
             const condition_02 = until.elementLocated({
@@ -309,22 +393,12 @@ const handeleStep_03 = async (
                                                 url: url,
                                               },
                                             };
-                                            creativeHistory(data)
-                                              .then(async () => {
-                                                fs.unlink(file_path, (err) => {
-                                                  if (err) {
-                                                    console.error(
-                                                      "Error deleting file:",
-                                                      err
-                                                    );
-                                                  } else {
-                                                    console.log(
-                                                      "File deleted successfully"
-                                                    );
-                                                  }
-                                                });
-                                              })
-                                              .catch(reject);
+                                            await creativeHistory(
+                                              data,
+                                              driver,
+                                              file_path
+                                            );
+
                                             await driver
                                               .wait(
                                                 until.elementLocated({
@@ -341,15 +415,17 @@ const handeleStep_03 = async (
                                                   )
                                                   .click()
                                                   .then(async () => {
-                                                    resolve("success");
                                                     if (index === count - 1) {
-                                                      /// remove a file after upload
-                                                      updateCreativeYTB(
-                                                        id,
-                                                        "completed",
-                                                        userId
-                                                      );
-                                                    }
+                                                      const checked =
+                                                        await updateCreativeYTB(
+                                                          id,
+                                                          "completed",
+                                                          userId
+                                                        );
+                                                      checked
+                                                        ? resolve("success")
+                                                        : reject("Run error");
+                                                    } else resolve("success");
                                                   })
                                                   .catch(reject);
                                               })
@@ -372,7 +448,7 @@ const handeleStep_03 = async (
       });
     } catch (error) {
       // await driver.quit();
-      updateCreativeYTB(id, "canceled", userId);
+      await updateCreativeYTB(id, "canceled", userId);
       console.log(error);
       reject(error);
     }
@@ -461,7 +537,7 @@ const openMultipleBrowsers = async () => {
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Game"
+      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Check"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
@@ -489,14 +565,13 @@ const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
   crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
-    const checkOpened = await checkBrowserOpened();
+    const checkOpened = await checkBrowserIsOpened();
     if (!checkOpened) {
       handMultiFetchYTB();
     } else {
       console.log("BROWSER OPENED");
     }
   });
-  // handMultiFetchYTB();
 };
 module.exports = {
   handMultiFetchYTB,
