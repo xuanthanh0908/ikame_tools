@@ -350,7 +350,8 @@ const handeleStep_03 = async (
                     until.elementTextIs(
                       findElement,
                       "Checks complete. No issues found."
-                    )
+                    ),
+                    60 * 4 * 1000
                   )
                   .then(async () => {
                     ///// handle last step upload video
