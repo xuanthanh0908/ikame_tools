@@ -598,7 +598,6 @@ const handMultiFetchYTB = async () => {
     throw new ApiError(400, "BAD REQUEST");
   }
 };
-// run_Now();
 const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
   crontab.scheduleJob("*/15 * * * * *", async function () {
