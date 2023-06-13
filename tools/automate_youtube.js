@@ -340,20 +340,7 @@ const handeleStep_03 = async (
                  *
                  *
                  */
-                // const check_upload_process_css =
-                //   ".progress-label.style-scope.ytcp-video-upload-progress";
-                // const findElement = await driver.findElement(
-                //   By.css(check_upload_process_css)
-                // );
-                // const wait_text = "Checks complete. No issues found.";
-                // // const wait_text = "100";
-                // await driver
-                //   .wait(
-                //     until.elementTextContains(findElement, wait_text),
-                //     60 * 4 * 1000
-                //   )
-                //   .then(async () => {
-                ///// handle last step upload video
+
                 const save_or_pb_unlisted_path =
                   "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
                 await driver
