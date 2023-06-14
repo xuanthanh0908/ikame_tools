@@ -8,9 +8,15 @@ const { emitEvent } = require("../utils/socket");
 const crontab = require("node-crontab");
 const fs = require("fs");
 const Queue = require("../utils/queue");
+/**
+ * set timeout for axios to 10s
+ */
+axios.default.timeout = 10000;
+/**
+ *
+ */
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1"
-//
 const url = {
   YOUTUBE: "/youtube",
   HISTORY: "/history",
@@ -108,8 +114,8 @@ const creativeHistory = async (data, driver, file_path) => {
         });
       }
     } catch (error) {
-      await driver.quit();
       drivers.splice(drivers.indexOf(driver), 1);
+      await driver.quit();
     }
   };
   networkOrFail(makeRequest, 5000);
