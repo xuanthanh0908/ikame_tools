@@ -115,7 +115,10 @@ const creativeHistory = async (data, driver, file_path) => {
       }
     } catch (error) {
       drivers.splice(drivers.indexOf(driver), 1);
-      await driver.quit();
+      const twoMinus = 2 * 1000 * 60;
+      await driver.sleep(twoMinus).then(async () => {
+        await driver.quit();
+      });
     }
   };
   networkOrFail(makeRequest, 5000);
