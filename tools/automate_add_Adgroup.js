@@ -209,7 +209,10 @@ const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
                 xpath: all_items_path,
               });
               await driver.wait(condition_02, max_time).then(async () => {
-                await driver.findElement(By.xpath(all_items_path)).click();
+                const findDrop = await driver.findElement(
+                  By.xpath(all_items_path)
+                );
+                await driver.executeScript("arguments[0].click();", findDrop);
 
                 /// wait data of all campaign
                 const loading_classname = "campaign-icon-app";
