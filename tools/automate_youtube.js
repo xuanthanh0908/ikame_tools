@@ -353,18 +353,6 @@ const handeleStep_03 = async (
                      *
                      *
                      */
-                    const check_upload_process_css =
-                      ".progress-label.style-scope.ytcp-video-upload-progress";
-                    const findElement = await driver.findElement(
-                      By.css(check_upload_process_css)
-                    );
-                    // const wait_text = "Checks complete. No issues found.";
-                    // const wait_text =
-                    //   "Upload complete ... Processing will begin shortly";
-                    // await driver
-                    //   .sleep(10000)
-
-                    //   .then(async () => {
                     ///// handle last step upload video
                     const save_or_pb_unlisted_path =
                       "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
@@ -393,7 +381,7 @@ const handeleStep_03 = async (
                             await driver
                               .wait(until.elementIsEnabled(btn_save), max_time)
                               .then(async () => {
-                                await driver.sleep(1000).then(async () => {
+                                await driver.sleep(2500).then(async () => {
                                   // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
                                   const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
                                   await driver
@@ -492,8 +480,6 @@ const handeleStep_03 = async (
                       .catch(reject);
                   })
                   .catch(reject);
-                // })
-                // .catch(reject);
               })
               .catch(reject);
           });
