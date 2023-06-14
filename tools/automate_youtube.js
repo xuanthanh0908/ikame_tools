@@ -356,13 +356,11 @@ const handeleStep_03 = async (
                       By.css(check_upload_process_css)
                     );
                     // const wait_text = "Checks complete. No issues found.";
-                    const wait_text =
-                      "Upload complete ... Processing will begin shortly";
+                    // const wait_text =
+                    //   "Upload complete ... Processing will begin shortly";
                     await driver
-                      .wait(
-                        until.elementTextContains(findElement, wait_text),
-                        60 * 4 * 1000
-                      )
+                      .sleep(10000)
+
                       .then(async () => {
                         ///// handle last step upload video
                         const save_or_pb_unlisted_path =
