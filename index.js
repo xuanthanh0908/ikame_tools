@@ -84,7 +84,7 @@ app.post("/tool/playlist", automateCreativePlaylist);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
 // app.post("/tool/creative-youtube", automateCreativeYoutube);
-// scheduleRun();
+scheduleRun();
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
   next(new ApiError(404, "Not found"));
