@@ -196,9 +196,10 @@ const run_Now = (req, res, next, driver) => {
         .then(async () => {
           const switch_acc_path =
             "//body//ytcp-app//ytd-compact-link-renderer[3]";
+          const findEl = await driver.findElement(By.xpath(switch_acc_path));
           await driver
-            .findElement(By.xpath(switch_acc_path))
-            .click()
+            .executeScript("arguments[0].click();", findEl)
+
             .then(async () => {
               await driver.sleep(500).then(async () => {
                 const all_acc_tagname = "ytd-account-item-renderer";
@@ -599,7 +600,7 @@ const handMultiFetchYTB = async () => {
   }
 };
 const scheduleRun = async () => {
-  // console.log("CHECKED  CRON JOB RUN");
+  // console.log("CHECKED CRON JOB RUN");
   crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
     const checkOpened = await checkBrowserIsOpened();
@@ -610,6 +611,7 @@ const scheduleRun = async () => {
     }
   });
 };
+
 module.exports = {
   handMultiFetchYTB,
   scheduleRun,
