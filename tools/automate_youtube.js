@@ -194,8 +194,7 @@ const run_Now = (req, res, next, driver) => {
         .findElement(By.xpath(chanel_path))
         .click()
         .then(async () => {
-          const switch_acc_path =
-            "//body//ytcp-app//ytd-compact-link-renderer[3]";
+          const switch_acc_path = "(//tp-yt-paper-item[@role='link'])[3]";
           const findEl = await driver.findElement(By.xpath(switch_acc_path));
           await driver
             .executeScript("arguments[0].click();", findEl)
@@ -203,31 +202,41 @@ const run_Now = (req, res, next, driver) => {
             .then(async () => {
               await driver.sleep(500).then(async () => {
                 const all_acc_tagname = "ytd-account-item-renderer";
+                const findAllAcc = await driver.findElement(
+                  By.tagName(all_acc_tagname)
+                );
                 await driver
-                  .findElements(By.tagName(all_acc_tagname))
-                  .then(async (elements) => {
-                    for (let index = 0; index < elements.length; index++) {
-                      const element = elements[index];
-                      let pathItem =
-                        '(//yt-formatted-string[@id="channel-title"])[' +
-                        (index + 1) +
-                        "]";
-                      driver
-                        .findElement(By.xpath(pathItem))
-                        .getText()
-                        .then(async (text) => {
-                          if (text === DATA.channel_name) {
-                            await element.click().then(async () => {
-                              handeleStep_02(DATA, driver, req, res, next)
-                                .then(() => resolve("success"))
-                                .catch(async (error) => {
-                                  // await driver.quit();
-                                  reject(error);
+                  .executeScript(
+                    "arguments[0].scrollIntoView(true)",
+                    findAllAcc
+                  )
+                  .then(async () => {
+                    await driver
+                      .findElements(By.tagName(all_acc_tagname))
+                      .then(async (elements) => {
+                        for (let index = 0; index < elements.length; index++) {
+                          const element = elements[index];
+                          let pathItem =
+                            '(//yt-formatted-string[@id="channel-title"])[' +
+                            (index + 1) +
+                            "]";
+                          driver
+                            .findElement(By.xpath(pathItem))
+                            .getText()
+                            .then(async (text) => {
+                              if (text === DATA.channel_name) {
+                                await element.click().then(async () => {
+                                  handeleStep_02(DATA, driver, req, res, next)
+                                    .then(() => resolve("success"))
+                                    .catch(async (error) => {
+                                      // await driver.quit();
+                                      reject(error);
+                                    });
                                 });
+                              }
                             });
-                          }
-                        });
-                    }
+                        }
+                      });
                   });
               });
             });
@@ -306,185 +315,175 @@ const handeleStep_03 = async (
   next
 ) => {
   const { id, userId } = req.body;
-  const max_time = 40000;
+  const max_time = 70 * 1000;
   return new Promise(async (resolve, reject) => {
     try {
       // wait for button upload video showing
       const btn_upload_id = "upload-icon";
-      const condition = until.elementLocated({
-        id: btn_upload_id,
-      });
-      await driver.wait(condition, max_time).then(async () => {
-        const findElBtnUpLoad = await driver.findElement(By.id(btn_upload_id));
-        await driver
-          .executeScript("arguments[0].click();", findElBtnUpLoad)
-          .then(async () => {
-            const input_upload_css = "input[name=Filedata]";
-            await driver
-              .wait(until.elementLocated({ css: input_upload_css }), max_time)
-              .then(async () => {
-                await driver
-                  .findElement(By.css(input_upload_css))
-                  .sendKeys(file_path);
-                const input_title_path = "(//div[@id='textbox'])[1]";
-                const condition_02 = until.elementLocated({
-                  xpath: input_title_path,
-                });
-                await driver
-                  .wait(condition_02, max_time)
-                  .then(async () => {
-                    /// handle title input
-                    const title = await driver.findElement(
-                      By.xpath(input_title_path)
-                    );
-                    await clearInput(title);
-                    await title.sendKeys(title_);
+      const findElBtnUpLoad = await driver.findElement(By.id(btn_upload_id));
+      await driver
+        .executeScript("arguments[0].click();", findElBtnUpLoad)
+        .then(async () => {
+          const input_upload_css = "input[name=Filedata]";
+          await driver
+            .wait(until.elementLocated({ css: input_upload_css }), max_time)
+            .then(async () => {
+              await driver
+                .findElement(By.css(input_upload_css))
+                .sendKeys(file_path);
+              const input_title_path = "(//div[@id='textbox'])[1]";
+              const condition_02 = until.elementLocated({
+                xpath: input_title_path,
+              });
+              await driver
+                .wait(condition_02, max_time)
+                .then(async () => {
+                  /// handle title input
+                  const title = await driver.findElement(
+                    By.xpath(input_title_path)
+                  );
+                  await clearInput(title);
+                  await title.sendKeys(title_);
 
-                    /////////////////////////////
-                    // handle choose options - for children
-                    const options_path = "(//div[@id='radioLabel'])[2]";
-                    await driver.findElement(By.xpath(options_path)).click();
-                    // handle next button
-                    const btn_next_path = "(//button[@id='step-badge-3'])[1]";
-                    await driver.findElement(By.xpath(btn_next_path)).click();
-                    /**
-                     *
-                     *
-                     *
-                     *
-                     *
-                     */
-                    ///// handle last step upload video
-                    const save_or_pb_unlisted_path =
-                      "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
-                    await driver
-                      .wait(
-                        until.elementsLocated({
-                          xpath: save_or_pb_unlisted_path,
-                        }),
-                        max_time
-                      )
-                      .then(async () => {
-                        const btn_save_css =
-                          "#done-button[aria-disabled=false]";
-                        const condition_03 = until.elementsLocated({
-                          css: btn_save_css,
-                        });
-                        await driver
-                          .wait(condition_03, max_time)
-                          .then(async () => {
-                            await driver
-                              .findElement(By.xpath(save_or_pb_unlisted_path))
-                              .click();
-                            const btn_save = await driver.findElement(
-                              By.css(btn_save_css)
-                            );
-                            await driver
-                              .wait(until.elementIsEnabled(btn_save), max_time)
-                              .then(async () => {
-                                await driver.sleep(2500).then(async () => {
-                                  // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
-                                  const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
-                                  await driver
-                                    .wait(
-                                      until.elementLocated(
-                                        By.css(btn_copy_css)
-                                      ),
-                                      max_time
-                                    )
-                                    .then(async () => {
-                                      const url_className =
-                                        ".style-scope.ytcp-video-info[target='_blank']";
-                                      await driver
-                                        .wait(
-                                          until.elementLocated(
-                                            By.css(url_className)
-                                          ),
-                                          max_time
-                                        )
-                                        .then(async () => {
-                                          await driver
-                                            .findElement(By.css(url_className))
-                                            .getAttribute("href")
-                                            .then(async (url) => {
-                                              await btn_save
-                                                .click()
-                                                .then(async () => {
-                                                  const btn_close_process_path =
-                                                    "//ytcp-button[@id='close-button']";
-                                                  const data = {
-                                                    product_id: DATA.product_id,
-                                                    channel_id: DATA.channel_id,
-                                                    created_by: userId,
-                                                    youtube_url: {
-                                                      file_name: title_,
-                                                      url: url,
-                                                    },
-                                                  };
-                                                  await creativeHistory(
-                                                    data,
-                                                    driver,
-                                                    file_path
-                                                  );
+                  /////////////////////////////
+                  // handle choose options - for children
+                  const options_path = "(//div[@id='radioLabel'])[2]";
+                  await driver.findElement(By.xpath(options_path)).click();
+                  // handle next button
+                  const btn_next_path = "(//button[@id='step-badge-3'])[1]";
+                  await driver.findElement(By.xpath(btn_next_path)).click();
+                  /**
+                   *
+                   *
+                   *
+                   *
+                   *
+                   */
+                  ///// handle last step upload video
+                  const save_or_pb_unlisted_path =
+                    "//tp-yt-paper-radio-button[@name='UNLISTED']//div[@id='radioLabel']";
+                  await driver
+                    .wait(
+                      until.elementsLocated({
+                        xpath: save_or_pb_unlisted_path,
+                      }),
+                      max_time
+                    )
+                    .then(async () => {
+                      const btn_save_css = "#done-button[aria-disabled=false]";
+                      const condition_03 = until.elementsLocated({
+                        css: btn_save_css,
+                      });
+                      await driver
+                        .wait(condition_03, max_time)
+                        .then(async () => {
+                          await driver
+                            .findElement(By.xpath(save_or_pb_unlisted_path))
+                            .click();
+                          const btn_save = await driver.findElement(
+                            By.css(btn_save_css)
+                          );
+                          await driver
+                            .wait(until.elementIsEnabled(btn_save), max_time)
+                            .then(async () => {
+                              await driver.sleep(2500).then(async () => {
+                                // ////////////////////////// HANDLE SAVE URL VIDEO /////////////////////////////
+                                const btn_copy_css = `ytcp-icon-button[icon="icons:content-copy"]`;
+                                await driver
+                                  .wait(
+                                    until.elementLocated(By.css(btn_copy_css)),
+                                    max_time
+                                  )
+                                  .then(async () => {
+                                    const url_className =
+                                      ".style-scope.ytcp-video-info[target='_blank']";
+                                    await driver
+                                      .wait(
+                                        until.elementLocated(
+                                          By.css(url_className)
+                                        ),
+                                        max_time
+                                      )
+                                      .then(async () => {
+                                        await driver
+                                          .findElement(By.css(url_className))
+                                          .getAttribute("href")
+                                          .then(async (url) => {
+                                            await btn_save
+                                              .click()
+                                              .then(async () => {
+                                                const btn_close_process_path =
+                                                  "//ytcp-button[@id='close-button']";
+                                                const data = {
+                                                  product_id: DATA.product_id,
+                                                  channel_id: DATA.channel_id,
+                                                  created_by: userId,
+                                                  youtube_url: {
+                                                    file_name: title_,
+                                                    url: url,
+                                                  },
+                                                };
+                                                await creativeHistory(
+                                                  data,
+                                                  driver,
+                                                  file_path
+                                                );
 
-                                                  await driver
-                                                    .wait(
-                                                      until.elementLocated({
-                                                        xpath:
-                                                          btn_close_process_path,
-                                                      }),
-                                                      max_time
-                                                    )
-                                                    .then(async () => {
-                                                      await driver
-                                                        .findElement(
-                                                          By.xpath(
-                                                            btn_close_process_path
-                                                          )
+                                                await driver
+                                                  .wait(
+                                                    until.elementLocated({
+                                                      xpath:
+                                                        btn_close_process_path,
+                                                    }),
+                                                    max_time
+                                                  )
+                                                  .then(async () => {
+                                                    await driver
+                                                      .findElement(
+                                                        By.xpath(
+                                                          btn_close_process_path
                                                         )
-                                                        .click()
-                                                        .then(async () => {
-                                                          if (
-                                                            index ===
-                                                            count - 1
-                                                          ) {
-                                                            const checked =
-                                                              await updateCreativeYTB(
-                                                                id,
-                                                                "completed",
-                                                                userId
+                                                      )
+                                                      .click()
+                                                      .then(async () => {
+                                                        if (
+                                                          index ===
+                                                          count - 1
+                                                        ) {
+                                                          const checked =
+                                                            await updateCreativeYTB(
+                                                              id,
+                                                              "completed",
+                                                              userId
+                                                            );
+                                                          checked
+                                                            ? resolve("success")
+                                                            : reject(
+                                                                "Run error"
                                                               );
-                                                            checked
-                                                              ? resolve(
-                                                                  "success"
-                                                                )
-                                                              : reject(
-                                                                  "Run error"
-                                                                );
-                                                          } else
-                                                            resolve("success");
-                                                        })
-                                                        .catch(reject);
-                                                    })
-                                                    .catch(reject);
-                                                });
-                                            });
-                                        })
-                                        .catch(reject);
-                                    })
-                                    .catch(reject);
-                                });
-                              })
-                              .catch(reject);
-                          });
-                      })
-                      .catch(reject);
-                  })
-                  .catch(reject);
-              })
-              .catch(reject);
-          });
-      });
+                                                        } else
+                                                          resolve("success");
+                                                      })
+                                                      .catch(reject);
+                                                  })
+                                                  .catch(reject);
+                                              });
+                                          });
+                                      })
+                                      .catch(reject);
+                                  })
+                                  .catch(reject);
+                              });
+                            })
+                            .catch(reject);
+                        });
+                    })
+                    .catch(reject);
+                })
+                .catch(reject);
+            })
+            .catch(reject);
+        });
     } catch (error) {
       // await driver.quit();
       await updateCreativeYTB(id, "actived", userId);
