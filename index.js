@@ -1,6 +1,7 @@
 const http = require("http");
 const helmet = require("helmet");
 const express = require("express");
+const os = require("os");
 const {
   handleFetchApiGgAds,
   handleFetchMultiApiGgAds,
@@ -84,7 +85,8 @@ app.post("/tool/playlist", automateCreativePlaylist);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
 // app.post("/tool/creative-youtube", automateCreativeYoutube);
-scheduleRun();
+//      scheduleRun();
+
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
   next(new ApiError(404, "Not found"));
@@ -105,6 +107,8 @@ let io = new Server(server, {
     origin: "*",
   },
 });
+
+// Get the operating system platform
 const namespaceSocket = io.of("/");
 socketHandler(namespaceSocket)
   .then((handler) => {

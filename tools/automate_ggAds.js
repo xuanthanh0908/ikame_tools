@@ -53,7 +53,9 @@ const runTest = async (req, res, next) => {
         // init maxtime
         const maxTime = 30000
         let options = new firefox.Options()
-
+        
+        console.log('----------path----------', path) // console
+        
         options.setProfile(path)
         options.setPreference('layout.css.devPixelsPerPx', '0.7')
         //To wait for browser to build and launch properly
