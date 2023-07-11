@@ -8,6 +8,16 @@ const { emitEvent } = require("../utils/socket");
 const crontab = require("node-crontab");
 const fs = require("fs");
 const Queue = require("../utils/queue");
+
+const configHeader = {
+  "Content-Type": "application/json",
+  apikey: "dcXgdwbqU9sgZ6rGjWr8yAGXjGvHOgbi",
+}
+const POST_MESSAGE_BOT = {
+  IKAME_BOT_API_CREATIVE_AUTOMATION:
+    "https://bot.ikamegroup.com/api/v1/custom-notifications/creative-automation-message",
+  CHANNEL_ID: "D05DMJA84PK",
+};
 /**
  * set timeout for axios to 10s
  */
@@ -16,6 +26,7 @@ axios.default.timeout = 10000;
  *
  *  */
 
+const hrms_api = "https://api-hrms.ikamegroup.com/api/v1";
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1"
 const url = {
@@ -30,6 +41,54 @@ let drivers = [];
 
 const diff = (a, b) => {
   return Math.abs(a - b);
+};
+// fetch User Info 
+const fetchUserInfo = async (id) => {
+  try {
+    const response = await axios({
+      url: hrms_api + '/user' + id,
+      method: "GET",
+      headers: configHeader,
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+// fetch product info
+const fetchProductInfo = async (id) => {
+  try {
+    const response = await axios({
+      url: backend_campaign_url + '/product/' + id,
+      method: "GET",
+      headers: configHeader,
+    });
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+// handle post message success to upload video
+const handlePostMessage = async (data, status) => {
+  const slack_data = {
+    productName: data.productName,
+    status: data.status,
+    progress: data.progress,
+    createdAt: data.createdAt,
+    uploadedBy: data.uploadedBy,
+    createdBy: data.createdBy,
+    channelId: POST_MESSAGE_BOT.CHANNEL_ID,
+  };
+  try {
+    await axios({
+      url: POST_MESSAGE_BOT.IKAME_BOT_API_CREATIVE_AUTOMATION,
+      method: "POST",
+      headers: configHeader,
+      data: slack_data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // handle check internet connection status
@@ -72,7 +131,7 @@ const networkOrFail = (callFunc, callTime) => {
 async function checkBrowserClosed(driver) {
   try {
     // Attempt to find an element on the page
-    await driver.findElement(By.tagName('html'));
+    await driver.findElement(By.tagName("html"));
   } catch (error) {
     // If the element cannot be found, it means the browser window is closed
     return true;
@@ -83,10 +142,10 @@ async function checkBrowserClosed(driver) {
 }
 // Continuously poll to check if the browser window is closed
 async function pollBrowserClosed(drivers) {
-  for(const driver of drivers) {
+  for (const driver of drivers) {
     const isClosed = await checkBrowserClosed(driver);
     if (isClosed) {
-      console.log('Firefox browser closed');
+      console.log("Firefox browser closed");
       // Additional cleanup or actions after browser close
       drivers.splice(drivers.indexOf(driver), 1);
       break;
@@ -203,6 +262,15 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
+
+
+
+
+
+
+
+
+
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {
   const { id, userId } = req.body;
@@ -267,6 +335,16 @@ const run_Now = (req, res, next, driver) => {
         });
     } catch (error) {
       await updateCreativeYTB(id, "actived", userId);
+      // handle post message
+      // const data = {
+      //   channelId: POST_MESSAGE_BOT.CHANNEL_ID,
+      //   progress: 0,
+      //   status: "failed",
+      //   createdAt: new Date().toISOString().slice(0,10),
+      //   productName: DATA.productName,
+
+      // }
+      // await postMessage(data)
       console.log("RUN TEST FAILED", error);
     }
   });
@@ -296,7 +374,6 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
           next
         )
           .then(async () => {
-            resolve("success");
             const data = {
               _id: id,
               current_progress: index + 1,
@@ -304,7 +381,8 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
               created_by: userId,
             };
             emitEvent("progress-ytb", data);
-            await updateCreative(id, data, userId);
+            await updateCreative(id, data);
+            resolve("success");
           })
           .catch(async (error) => {
             drivers.splice(drivers.indexOf(driver), 1);
@@ -313,7 +391,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       }
     } catch (error) {
       drivers.splice(drivers.indexOf(driver), 1);
-      await updateCreativeYTB(id, "actived", userId);
+      await updateCreativeYTB(id, "actived");
       reject(error);
     } finally {
       const twoMinus = 2 * 60 * 1000;
@@ -532,8 +610,7 @@ const openBrowserWindow = async (data, index) => {
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-        // Listen for the close event of the Firefox browser window
-        const isClosed = await checkBrowserClosed();
+      
         drivers.push(driver);
 
         // Get the window size
@@ -604,15 +681,17 @@ const handMultiFetchYTB = async () => {
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
+      const getProductById = await axios.get(backend_campaign_url + '/product/' + origin_data[0]['product_id'])
+      origin_data[0]['productName'] = getProductById.data.data?.app_name
+      console.log(origin_data)
       q.send(origin_data);
       /// reset x, y
       x = 0;
       y = 0;
       openMultipleBrowsers()
-        .then(async() => {
+        .then(async () => {
           // Do something after opening the browsers
           console.log("Browsers opened successfully");
-          
         })
         .catch((error) => {
           console.error("Error:", error);
@@ -629,7 +708,7 @@ const scheduleRun = async () => {
   crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
     const checkOpened = await checkBrowserIsOpened();
-    await pollBrowserClosed(drivers)
+    await pollBrowserClosed(drivers);
     if (!checkOpened) {
       handMultiFetchYTB();
     } else {
