@@ -72,20 +72,10 @@ const automateAdsGroup = catchAsync(async (req, res, next) => {
   res.status(200).send({ message: "success" });
 });
 
-const automateCreativePlaylist = catchAsync(async (req, res, next) => {
-  const { isMulti } = req.body;
-  res.status(200).send({ message: "success" });
-  if (isMulti) {
-    await handMultiFetchCreativePlaylist(req, res, next);
-  } else await handFetchCreativePlaylist(req, res, next);
-});
-
 app.post("/tool/tiktok", createCampaignTikTok);
-app.post("/tool/playlist", automateCreativePlaylist);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
-// app.post("/tool/creative-youtube", automateCreativeYoutube);
-//      scheduleRun();
+scheduleRun();
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
@@ -118,19 +108,6 @@ socketHandler(namespaceSocket)
     });
   })
   .catch((error) => console.log(error));
-// start the server
-
-const exitHandler = () => {
-  if (server) {
-    server.close(() => {
-      console.log("Server closed");
-      process.exit(1);
-    });
-  } else {
-    process.exit(1);
-  }
-};
-
 const unexpectedErrorHandler = (error) => {
   console.log(error);
   // exitHandler();

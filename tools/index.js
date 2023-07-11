@@ -7,10 +7,6 @@ const {
   handMultiFetchAdsGroup,
 } = require("../tools/automate_add_Adgroup");
 const {
-  handFetchCreativePlaylist,
-  handMultiFetchCreativePlaylist,
-} = require("../tools/automate_addPlaylist");
-const {
   handleFetchApi,
   handleMultiFetchApi,
 } = require("../tools/automate_titktok");
@@ -22,7 +18,5 @@ module.exports = {
   handMultiFetchAdsGroup,
   handleFetchApi,
   handleMultiFetchApi,
-  handFetchCreativePlaylist,
-  handMultiFetchCreativePlaylist,
   scheduleRun,
 };

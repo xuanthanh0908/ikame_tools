@@ -62,20 +62,8 @@ const runTest = (req, res, next) => {
           .build();
         driver.manage().window().maximize();
         try {
-          const res = await axios.get(
-            backend_campaign_url +
-              "/config/ads-groups?created_by=" +
-              userId +
-              "&is_default=true"
-          );
-          await driver.get(res.data.data[0].campaign_url);
-          await handleStep1(
-            DATA,
-            driver,
-            userId,
-            id,
-            res.data.data[0].id_game_app
-          );
+          await driver.get(DATA.campaign_url);
+          await handleStep1(DATA, driver, userId, id);
 
           const loading_page = "//div[contains(text(),'Ad group name')]";
           await driver
@@ -95,7 +83,7 @@ const runTest = (req, res, next) => {
                 const ads_group = await driver.findElement(
                   By.xpath(ads_group_name_path)
                 );
-              
+
                 clearInput(ads_group).then(async () => {
                   await ads_group
                     .sendKeys(DATA.ads_group_name)
@@ -114,7 +102,6 @@ const runTest = (req, res, next) => {
                             index,
                             value,
                           ] of DATA.headline.entries()) {
-                            
                             const input_headline_path =
                               "(//input[@aria-label='Headline " +
                               (index + 1) +
@@ -139,7 +126,7 @@ const runTest = (req, res, next) => {
                             DATA.videos.length > 0
                           ) {
                             await handleStep2(DATA, driver, userId, id);
-                            console.log("=====OK 01=====");
+                            console.log("=====VIDEO RUNNING=====");
                           }
                           if (
                             DATA.images &&
@@ -147,19 +134,13 @@ const runTest = (req, res, next) => {
                             DATA.images.length > 0
                           ) {
                             await handleStep3(DATA, driver, userId, id);
-                            console.log("=====OK 02=====");
+                            console.log("=====IMAGE RUNNING=====");
                           }
 
                           nextAction(DATA, driver, userId, id)
                             .then(() => resolve("success"))
                             .catch(reject);
-
-                          // // console.log("click choose video");
-                          // handleStep2(DATA, driver, id, userId)
-                          //   .then((e) => {
-                          //     resolve(e);
-                          //   })
-                          //   .catch(reject);
+                          
                         });
                     });
                 });
@@ -178,7 +159,7 @@ const runTest = (req, res, next) => {
   });
 };
 /// handle get and choose campaign id
-const handleStep1 = async (DATA, driver, id, userId, id_game_app) => {
+const handleStep1 = async (DATA, driver, id, userId) => {
   const max_time = 30000;
   const soft_time = 500;
   return new Promise(async (resolve, reject) => {

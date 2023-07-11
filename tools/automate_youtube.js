@@ -1,4 +1,4 @@
-const { By, Key, until } = require("selenium-webdriver");
+const { By, Key, until, Builder, Capabilities } = require("selenium-webdriver");
 const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
@@ -14,7 +14,8 @@ const Queue = require("../utils/queue");
 axios.default.timeout = 10000;
 /**
  *
- */
+ *  */
+
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1"
 const url = {
@@ -67,7 +68,32 @@ const networkOrFail = (callFunc, callTime) => {
   if (checkInternetConnection()) callFunc();
   else request();
 };
+// Polling function to check if the browser window is closed
+async function checkBrowserClosed(driver) {
+  try {
+    // Attempt to find an element on the page
+    await driver.findElement(By.tagName('html'));
+  } catch (error) {
+    // If the element cannot be found, it means the browser window is closed
+    return true;
+  }
 
+  // If the element is found, the browser window is still open
+  return false;
+}
+// Continuously poll to check if the browser window is closed
+async function pollBrowserClosed(drivers) {
+  for(const driver of drivers) {
+    const isClosed = await checkBrowserClosed(driver);
+    if (isClosed) {
+      console.log('Firefox browser closed');
+      // Additional cleanup or actions after browser close
+      drivers.splice(drivers.indexOf(driver), 1);
+      break;
+    }
+    await driver.sleep(1000); // Wait for 1 second before polling again
+  }
+}
 const checkBrowserIsOpened = async () => {
   return drivers.length > 0;
 };
@@ -177,7 +203,6 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
-
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {
   const { id, userId } = req.body;
@@ -198,7 +223,6 @@ const run_Now = (req, res, next, driver) => {
           const findEl = await driver.findElement(By.xpath(switch_acc_path));
           await driver
             .executeScript("arguments[0].click();", findEl)
-
             .then(async () => {
               await driver.sleep(500).then(async () => {
                 const all_acc_tagname = "ytd-account-item-renderer";
@@ -508,7 +532,8 @@ const openBrowserWindow = async (data, index) => {
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-
+        // Listen for the close event of the Firefox browser window
+        const isClosed = await checkBrowserClosed();
         drivers.push(driver);
 
         // Get the window size
@@ -584,9 +609,10 @@ const handMultiFetchYTB = async () => {
       x = 0;
       y = 0;
       openMultipleBrowsers()
-        .then(() => {
+        .then(async() => {
           // Do something after opening the browsers
           console.log("Browsers opened successfully");
+          
         })
         .catch((error) => {
           console.error("Error:", error);
@@ -603,6 +629,7 @@ const scheduleRun = async () => {
   crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
     const checkOpened = await checkBrowserIsOpened();
+    await pollBrowserClosed(drivers)
     if (!checkOpened) {
       handMultiFetchYTB();
     } else {
