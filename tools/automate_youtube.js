@@ -6,13 +6,16 @@ const ApiError = require("../utils/apiError");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const crontab = require("node-crontab");
+const os = require("os");
 const fs = require("fs");
 const Queue = require("../utils/queue");
 
+// Get the operating system platform
+const platform = os.platform();
 const configHeader = {
   "Content-Type": "application/json",
   apikey: "dcXgdwbqU9sgZ6rGjWr8yAGXjGvHOgbi",
-}
+};
 const POST_MESSAGE_BOT = {
   IKAME_BOT_API_CREATIVE_AUTOMATION:
     "https://bot.ikamegroup.com/api/v1/custom-notifications/creative-automation-message",
@@ -42,11 +45,11 @@ let drivers = [];
 const diff = (a, b) => {
   return Math.abs(a - b);
 };
-// fetch User Info 
+// fetch User Info
 const fetchUserInfo = async (id) => {
   try {
     const response = await axios({
-      url: hrms_api + '/user' + id,
+      url: hrms_api + "/user" + id,
       method: "GET",
       headers: configHeader,
     });
@@ -59,7 +62,7 @@ const fetchUserInfo = async (id) => {
 const fetchProductInfo = async (id) => {
   try {
     const response = await axios({
-      url: backend_campaign_url + '/product/' + id,
+      url: backend_campaign_url + "/product/" + id,
       method: "GET",
       headers: configHeader,
     });
@@ -263,14 +266,6 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.DELETE);
 };
 
-
-
-
-
-
-
-
-
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {
   const { id, userId } = req.body;
@@ -293,58 +288,35 @@ const run_Now = (req, res, next, driver) => {
             .executeScript("arguments[0].click();", findEl)
             .then(async () => {
               await driver.sleep(500).then(async () => {
-                const all_acc_tagname = "ytd-account-item-renderer";
-                const findAllAcc = await driver.findElement(
-                  By.tagName(all_acc_tagname)
-                );
+                // get all channel titl
+                const all_acc_id = "channel-title";
                 await driver
-                  .executeScript(
-                    "arguments[0].scrollIntoView(true)",
-                    findAllAcc
-                  )
-                  .then(async () => {
-                    await driver
-                      .findElements(By.tagName(all_acc_tagname))
-                      .then(async (elements) => {
-                        for (let index = 0; index < elements.length; index++) {
-                          const element = elements[index];
-                          let pathItem =
-                            '(//yt-formatted-string[@id="channel-title"])[' +
-                            (index + 1) +
-                            "]";
-                          driver
-                            .findElement(By.xpath(pathItem))
-                            .getText()
-                            .then(async (text) => {
-                              if (text === DATA.channel_name) {
-                                await element.click().then(async () => {
-                                  handeleStep_02(DATA, driver, req, res, next)
-                                    .then(() => resolve("success"))
-                                    .catch(async (error) => {
-                                      // await driver.quit();
-                                      reject(error);
-                                    });
-                                });
-                              }
+                  .findElements(By.id(all_acc_id))
+                  .then(async (items) => {
+                    for (const item of items) {
+                      const text = await item.getText();
+                      if (text === DATA.channel_name) {
+                        await driver.executeScript(
+                          "arguments[0].scrollIntoView(true)",
+                          item
+                        );
+
+                        await item.click().then(async () => {
+                          handeleStep_02(DATA, driver, req, res, next)
+                            .then(() => resolve("success"))
+                            .catch(async (error) => {
+                              // await driver.quit();
+                              reject(error);
                             });
-                        }
-                      });
+                        });
+                      }
+                    }
                   });
               });
             });
         });
     } catch (error) {
       await updateCreativeYTB(id, "actived", userId);
-      // handle post message
-      // const data = {
-      //   channelId: POST_MESSAGE_BOT.CHANNEL_ID,
-      //   progress: 0,
-      //   status: "failed",
-      //   createdAt: new Date().toISOString().slice(0,10),
-      //   productName: DATA.productName,
-
-      // }
-      // await postMessage(data)
       console.log("RUN TEST FAILED", error);
     }
   });
@@ -359,7 +331,10 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       const files = fs.readdirSync(DATA.video_path);
 
       const title = files.map((file) => file);
-      const filePaths = files.map((file) => `${DATA.video_path}\\${file}`);
+      const filePaths = files.map(
+        (file) =>
+          `${DATA.video_path} ${platform === "darwin" ? "/" : "\\"}${file}`
+      );
       for (const [index, filePath] of filePaths.entries()) {
         await handeleStep_03(
           DATA,
@@ -610,7 +585,7 @@ const openBrowserWindow = async (data, index) => {
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-      
+
         drivers.push(driver);
 
         // Get the window size
@@ -681,9 +656,11 @@ const handMultiFetchYTB = async () => {
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
-      const getProductById = await axios.get(backend_campaign_url + '/product/' + origin_data[0]['product_id'])
-      origin_data[0]['productName'] = getProductById.data.data?.app_name
-      console.log(origin_data)
+      const getProductById = await axios.get(
+        backend_campaign_url + "/product/" + origin_data[0]["product_id"]
+      );
+      origin_data[0]["productName"] = getProductById.data.data?.app_name;
+      console.log(origin_data);
       q.send(origin_data);
       /// reset x, y
       x = 0;
