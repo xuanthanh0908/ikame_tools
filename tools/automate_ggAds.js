@@ -64,7 +64,8 @@ const runTest = async (req, res, next) => {
         // driver.switchTo().window(driver.getWindowHandle());
         try {
           await driver.get(DATA.campaign_url);
-          const app_promote_path = "dynamic-component[data-value=APP_DOWNLOADS";
+          const app_promote_path =
+            "dynamic-component[data-value=APP_DOWNLOADS]";
           await driver
             .wait(
               until.elementLocated({
@@ -73,85 +74,109 @@ const runTest = async (req, res, next) => {
               maxTime
             )
             .then(async () => {
-              await driver.findElement(By.css(app_promote_path)).click();
+              const findEl = await driver.findElement(By.css(app_promote_path));
+              await driver.executeScript("arguments[0].click()", findEl);
+              const select_camp_type_css = "channel-selection-card-v2";
+              await driver
+                .wait(
+                  until.elementLocated({
+                    css: select_camp_type_css,
+                  }),
+                  maxTime
+                )
+                .then(async () => {
+                  const select_camp_type = await driver.findElement(
+                    By.css(select_camp_type_css)
+                  );
+                  await driver.executeScript(
+                    "arguments[0].click()",
+                    select_camp_type
+                  );
 
-              /// wait for load down components loaded
-              const some_path_loading = "//div[normalize-space()='Android']";
-              const conditions_01 = until.elementLocated({
-                xpath: some_path_loading,
-              });
-              await driver.wait(conditions_01, maxTime).then(async () => {
-                const type_app_path =
-                  "//div[normalize-space()='" + DATA.type_app + "']";
-                const app_promote_btn = await driver.findElement(
-                  By.xpath(type_app_path)
-                );
-                await driver.executeScript(
-                  "arguments[0].click();",
-                  app_promote_btn
-                );
-                // search your app
-                const input_search_app = ".flex-div .input.input-area";
-                const condition_04 = until.elementLocated({
-                  css: input_search_app,
-                });
-                await driver.wait(condition_04, maxTime).then(async () => {
-                  await driver
-                    .findElement({
+                  /// wait for load down components loaded
+                  const some_path_loading =
+                    "//div[normalize-space()='Android']";
+                  const conditions_01 = until.elementLocated({
+                    xpath: some_path_loading,
+                  });
+                  await driver.wait(conditions_01, maxTime).then(async () => {
+                    const type_app_path =
+                      "//div[normalize-space()='" + DATA.type_app + "']";
+                    const app_promote_btn = await driver.findElement(
+                      By.xpath(type_app_path)
+                    );
+                    await driver.executeScript(
+                      "arguments[0].click();",
+                      app_promote_btn
+                    );
+                    // search your app
+                    const input_search_app = ".flex-div .input.input-area";
+                    const condition_04 = until.elementLocated({
                       css: input_search_app,
-                    })
-                    .sendKeys(DATA.package_name)
-                    .then(async () => {
-                      const select_app_path =
-                        ".app-info._ngcontent-awn-CM_EDITING-33";
-                      const conditions_02 = until.elementLocated({
-                        css: select_app_path,
-                      });
+                    });
+                    await driver.wait(condition_04, maxTime).then(async () => {
                       await driver
-                        .wait(conditions_02, maxTime)
+                        .findElement({
+                          css: input_search_app,
+                        })
+                        .sendKeys(DATA.package_name)
                         .then(async () => {
-                          await driver
-                            .findElement(By.css(select_app_path))
-                            .click();
-                          const input_camp_name =
-                            ".campaign-name-view .input.input-area";
-                          const condition_05 = until.elementLocated({
-                            css: input_camp_name,
+                          const select_app_path =
+                            ".app-info._ngcontent-awn-CM_EDITING-33";
+                          const conditions_02 = until.elementLocated({
+                            css: select_app_path,
                           });
                           await driver
-                            .wait(condition_05, maxTime)
+                            .wait(conditions_02, maxTime)
                             .then(async () => {
-                              const input = await driver.findElement(
-                                By.css(input_camp_name)
-                              );
-                              await clearInput(input);
-                              await input.sendKeys(DATA.campaign_name);
-                            });
-
-                          /// next button
-                          const button_next_css =
-                            'continue-cancel-selection-view  material-button[aria-label="Continue to the next step"]';
-                          const conditions_03 = until.elementLocated({
-                            css: button_next_css,
-                          });
-                          await driver
-                            .wait(conditions_03, maxTime)
-                            .then(async () => {
-                              const button = await driver.findElement(
-                                By.css(button_next_css)
-                              );
                               await driver
-                                .executeScript("arguments[0].click()", button)
+                                .findElement(By.css(select_app_path))
+                                .click();
+                              const input_camp_name =
+                                ".campaign-name-view .input.input-area";
+                              const condition_05 = until.elementLocated({
+                                css: input_camp_name,
+                              });
+                              await driver
+                                .wait(condition_05, maxTime)
                                 .then(async () => {
-                                  handleStep2(DATA, driver, userId, id)
-                                    .then(() => resolve("success"))
-                                    .catch(reject);
+                                  const input = await driver.findElement(
+                                    By.css(input_camp_name)
+                                  );
+                                  await clearInput(input);
+                                  await input.sendKeys(DATA.campaign_name);
+                                });
+
+                              /// next button
+                              const button_next_path =
+                                "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+
+                              const conditions_03 = until.elementLocated({
+                                xpath: button_next_path,
+                              });
+                              await driver
+                                .wait(conditions_03, maxTime)
+                                .then(async () => {
+                                  const button = await driver.findElement(
+                                    By.xpath(button_next_path)
+                                  );
+                                  await driver
+                                    .executeScript(
+                                      "arguments[0].click()",
+                                      button
+                                    )
+                                    .then(async () => {
+                                      handleStep2(DATA, driver, userId, id)
+                                        .then(() => resolve("success"))
+                                        .catch(reject);
+                                    });
                                 });
                             });
                         });
                     });
-                });
-              });
+                  });
+                })
+                .catch(reject);
             });
         } finally {
           //
@@ -273,9 +298,10 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                         findEl
                       )
                       .then(async () => {
-                        await findEl.click();
-
-                        await driver.sleep(2000);
+                        await driver.executeScript(
+                          "arguments[0].click()",
+                          findEl
+                        );
                       });
                   } else languageArr.splice(findEnglishIndex, 1);
                   for (const lang of languageArr) {
@@ -290,9 +316,10 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                         findEl
                       )
                       .then(async () => {
-                        await findEl.click();
-
-                        await driver.sleep(2000);
+                        await driver.executeScript(
+                          "arguments[0].click()",
+                          findEl
+                        );
                       });
                   }
                 } else {
@@ -304,9 +331,10 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                   await driver
                     .executeScript("arguments[0].scrollIntoView(true)", findEl)
                     .then(async () => {
-                      await findEl.click();
-
-                      await driver.sleep(2000);
+                      await driver.executeScript(
+                        "arguments[0].click()",
+                        findEl
+                      );
                     });
                 }
                 // handle next button ==== MAYBE THE PATH DOES NOT BE CHANGED
