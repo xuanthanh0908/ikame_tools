@@ -129,16 +129,16 @@ const runTest = async (req, res, next) => {
                             });
 
                           /// next button
-                          const button_next_path =
-                            "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                          const button_next_css =
+                            'continue-cancel-selection-view  material-button[aria-label="Continue to the next step"]';
                           const conditions_03 = until.elementLocated({
-                            xpath: button_next_path,
+                            css: button_next_css,
                           });
                           await driver
                             .wait(conditions_03, maxTime)
                             .then(async () => {
                               const button = await driver.findElement(
-                                By.xpath(button_next_path)
+                                By.css(button_next_css)
                               );
                               await driver
                                 .executeScript("arguments[0].click()", button)
