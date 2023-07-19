@@ -75,7 +75,7 @@ const automateAdsGroup = catchAsync(async (req, res, next) => {
 app.post("/tool/tiktok", createCampaignTikTok);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
-scheduleRun();
+// scheduleRun();
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
