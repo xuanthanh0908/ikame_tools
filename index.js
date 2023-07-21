@@ -1,7 +1,6 @@
 const http = require("http");
 const helmet = require("helmet");
 const express = require("express");
-const os = require("os");
 const {
   handleFetchApiGgAds,
   handleFetchMultiApiGgAds,
@@ -9,9 +8,9 @@ const {
   handMultiFetchAdsGroup,
   handleFetchApi,
   handleMultiFetchApi,
-  handFetchCreativePlaylist,
-  handMultiFetchCreativePlaylist,
   scheduleRun,
+  handMultiFetchMintegralRemovedCreative,
+  handleFetchMintegralRemoveCreative,
 } = require("./tools/");
 const cors = require("cors");
 const socketIo = require("socket.io");
@@ -48,6 +47,7 @@ app.use(express.json());
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
 
+// define logic routing for tiktok
 const createCampaignTikTok = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   if (isMulti) {
@@ -55,6 +55,7 @@ const createCampaignTikTok = catchAsync(async (req, res, next) => {
   } else await handleFetchApi(req, res, next);
   res.status(200).send({ message: "success" });
 });
+// define logic routing for google ads
 const createCampaignGgAds = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   if (isMulti) {
@@ -62,7 +63,7 @@ const createCampaignGgAds = catchAsync(async (req, res, next) => {
   } else await handleFetchApiGgAds(req, res, next);
   res.status(200).send({ message: "success" });
 });
-
+// define logic routing for ads group
 const automateAdsGroup = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   // console.log(req.body);
@@ -71,10 +72,16 @@ const automateAdsGroup = catchAsync(async (req, res, next) => {
   } else await handFetchAdsGroup(req, res, next);
   res.status(200).send({ message: "success" });
 });
-
+// define logic routing for Deleted Creative Mintegral
+const automateMintegralDeletedCreative = catchAsync(async (req, res, next) => {
+  const { isMulti } = req.body;
+  await handMultiFetchMintegralRemovedCreative(req, res, next);
+  res.status(200).send({ message: "success" });
+});
 app.post("/tool/tiktok", createCampaignTikTok);
 app.post("/tool/google-ads", createCampaignGgAds);
 app.post("/tool/google-ads-group", automateAdsGroup);
+app.post("/tool/mintegral-deleted-creative", automateMintegralDeletedCreative);
 // scheduleRun();
 
 // send back a 404 error for any unknown api request
@@ -119,7 +126,7 @@ process.on("uncaughtException", unexpectedErrorHandler);
 /// something went wrong .
 process.on("SIGTERM", () => {
   console.log("SIGTERM received");
-  // if (server) {
-  //   server.close();
-  // }
+  if (server) {
+    server.close();
+  }
 });
