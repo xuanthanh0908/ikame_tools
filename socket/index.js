@@ -8,7 +8,6 @@ async function socketHandler(connectingSockets) {
         socket.id
       );
       connectedSocket[id] = socket.id;
-      console.log(connectedSocket);
     });
     /**
      *
@@ -55,24 +54,16 @@ async function socketHandler(connectingSockets) {
      */
     // socket listener for deleted creative mintegral
     socket.on("integral-deleted-creative:update-progress-on", async (data) => {
-      console.log(
-        "\n\nchecking integral-deleted-creative:update-progress-on: \n\n",
-        data.created_by
-      );
-
       if (connectedSocket[data.created_by]) {
+        console.log("\n\nchecking update-progress-on", data);
         socket
           .to(connectedSocket[data.created_by])
           .emit("integral-deleted-creative:update-progress-to", data);
       }
     });
     socket.on("integral-deleted-creative:notify-task-on", async (data) => {
-      console.log(
-        "\n\nnchecking integral-deleted-creative:notify-task-on: \n\n",
-        data
-      );
-
       if (connectedSocket[data.created_by]) {
+        console.log("\n\nchecking notify-task-on", data);
         socket
           .to(connectedSocket[data.created_by])
           .emit("integral-deleted-creative:notify-task-to", data);

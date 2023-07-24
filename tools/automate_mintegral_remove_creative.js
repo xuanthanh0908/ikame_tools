@@ -1,4 +1,4 @@
-const { Builder, Browser, By, Key, until } = require("selenium-webdriver");
+const { By, until } = require("selenium-webdriver");
 // const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
@@ -7,29 +7,16 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 
-///
-let data = [
-  {
-    id: 1,
-    creativeName: "test 01",
-  },
-  {
-    id: 2,
-    creativeName: "test 02",
-  },
-  {
-    id: 3,
-    creativeName: "test 03",
-  },
-  {
-    id: 4,
-    creativeName: "test 04",
-  },
-  {
-    id: 5,
-    creativeName: "test 05",
-  },
-];
+/**
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 let totalProgress = 0;
 let currentProgress = 0;
 const totalStepsCompleted = 2;
@@ -96,7 +83,7 @@ const openBrowserWindow = async (data, index) => {
         const res = null;
         const next = null;
 
-        runTest(req, res, next, driver, index);
+        runTest(req, res, next, driver, index, numBrowsers);
       } catch (error) {
         reject(error);
       }
@@ -138,7 +125,7 @@ const openMultipleBrowsers = async (data) => {
   const numBrowsers = data?.listMintegralDeletedCreative?.length;
   totalProgress = numBrowsers * totalStepsCompleted;
   for (let i = 0; i < numBrowsers; i++) {
-    await openBrowserWindow(data, i);
+    await openBrowserWindow(data, i, numBrowsers);
   }
 };
 // handle run data
@@ -170,9 +157,9 @@ const handleFetchMintegralRemoveCreative = catchAsync(
 // handle run multiple data
 const handMultiFetchMintegralRemovedCreative = catchAsync(
   async (req, res, next) => {
-    const checkOpened = await checkBrowserIsOpened();
     await pollBrowserClosed(drivers);
-    if (!checkOpened) {
+    const checkOpened = await checkBrowserIsOpened();
+    if (checkOpened === false) {
       const { listMintegralDeletedCreative } = req.body;
       try {
         /// reset x, y
@@ -223,6 +210,12 @@ const handlePushNotifications = (
       break;
   }
 };
+
+/** Reset variables */
+const handleResetVariables = () => {
+  totalProgress = 0;
+  currentProgress = 0;
+};
 /**
  * MAIN
  * @param {*} req
@@ -231,58 +224,103 @@ const handlePushNotifications = (
  * @param {*} driver
  * @returns
  */
-const runTest = (req, res, next, driver, index) => {
+const runTest = (req, res, next, driver, index, numBrowsers) => {
   const maxTime = 30000;
   const { userId, listMintegralDeletedCreative } = req;
   const { creativeName, offerName } = listMintegralDeletedCreative[index];
   return new Promise(async (resolve, reject) => {
     try {
-      await driver.get("https://www.google.com");
-      const inputSearchCss = "textarea[name=q]";
+      // open the browser with the specified creative name
+      await driver.get(
+        "https://adv.mintegral.com/creatives?creative_name=" + creativeName
+      );
+      currentProgress += 1;
+      // send notify update progress
+      handlePushNotifications(
+        "update-progress",
+        userId,
+        null,
+        null,
+        (currentProgress / totalProgress) * 100
+      );
+      // define path delete button
+      const btnDeletePath =
+        "//button[@class='el-button text--red el-button--text']";
       await driver
         .wait(
           until.elementLocated({
-            css: inputSearchCss,
+            xpath: btnDeletePath,
           }),
           maxTime
         )
         .then(async () => {
+          await driver.findElement(By.xpath(btnDeletePath)).click();
+          currentProgress += 1;
+          // send notify update progress
+          handlePushNotifications(
+            "update-progress",
+            userId,
+            null,
+            null,
+            (currentProgress / totalProgress) * 100
+          );
+          // define offer name path
+          const offerNamePath = "//textarea[@class='el-textarea__inner']";
           await driver
-            .findElement(By.css(inputSearchCss))
-            .sendKeys(creativeName);
-          currentProgress += index * 1;
-          // send notify update progress
-          handlePushNotifications(
-            "update-progress",
-            userId,
-            null,
-            null,
-            currentProgress
-          );
-          const btnSearchPath =
-            "//div[@class='FPdoLc lJ9FBc']//input[@name='btnK']";
-          await driver.findElement(By.xpath(btnSearchPath)).click();
-          currentProgress += index * 2;
-          // send notify update progress
-          handlePushNotifications(
-            "update-progress",
-            userId,
-            null,
-            null,
-            currentProgress
-          );
-          // send notification status task
-          handlePushNotifications(
-            "notify-task",
-            userId,
-            "Test ID",
-            false,
-            null
-          );
-          resolve("Run success");
+            .wait(
+              until.elementLocated({
+                xpath: offerNamePath,
+              }),
+              maxTime
+            )
+            .then(async () => {
+              /** change offer name */
+              await driver
+                .findElement(By.xpath(offerNamePath))
+                .sendKeys(offerName);
+              currentProgress += 1;
+              // send notify update progress
+              handlePushNotifications(
+                "update-progress",
+                userId,
+                null,
+                null,
+                (currentProgress / totalProgress) * 100
+              );
+              // define delete button
+
+              const btnDeleteCreativePath =
+                "//div[@aria-label='Delete Creative']//button[2]";
+              await driver
+                .wait(
+                  until.elementLocated({
+                    xpath: btnDeleteCreativePath,
+                  })
+                )
+                .then(async () => {
+                  await driver
+                    .findElement(By.xpath(btnDeleteCreativePath))
+                    .click();
+                  currentProgress += 1;
+                  // send notify update progress
+                  handlePushNotifications(
+                    "update-progress",
+                    userId,
+                    null,
+                    null,
+                    (currentProgress / totalProgress) * 100
+                  );
+                  resolve("Run Sucess");
+                  /****************** DONE ***************************/
+                })
+                .catch(reject);
+            })
+            .catch(reject);
         })
         .catch(reject);
     } catch (error) {
+      totalProgress = 0;
+      currentProgress = 0;
       reject(error);
       await driver.sleep(2000);
     }
@@ -290,78 +328,82 @@ const runTest = (req, res, next, driver, index) => {
     console.log("RUN TEST FAILED\n\n", err);
   });
 };
-// const runTest = (req, res, next, driver, index) => {
+// const runTest = (req, res, next, driver, index, numBrowsers) => {
 //   const maxTime = 30000;
-//   const { userId } = req.body;
-//   const DATA = req.data;
-//   const { creativeName, offerName } = DATA;
-//   // console.log("=============DATA==============", DATA);
+//   const { userId, listMintegralDeletedCreative } = req;
+//   const { creativeName, offerName } = listMintegralDeletedCreative[index];
 //   return new Promise(async (resolve, reject) => {
 //     try {
-//       // open the browser with the specified creative name
-//       await driver.get(
-//         "https://adv.mintegral.com/creatives?creative_name=" + creativeName
-//       );
-//       currentProgress += index * 1;
-//       // define path delete button
-//       const btnDeletePath =
-//         "//button[@class='el-button text--red el-button--text']";
+//       await driver.get("https://www.google.com");
+//       const inputSearchCss = "textarea[name=q]";
 //       await driver
 //         .wait(
 //           until.elementLocated({
-//             xpath: btnDeletePath,
+//             css: inputSearchCss,
 //           }),
 //           maxTime
 //         )
 //         .then(async () => {
-//           await driver.findElement(By.xpath(btnDeletePath)).click();
-//           currentProgress += index * 2;
-//           // define offer name path
-//           const offerNamePath = "//textarea[@class='el-textarea__inner']";
 //           await driver
-//             .wait(
-//               until.elementLocated({
-//                 xpath: offerNamePath,
-//               }),
-//               maxTime
-//             )
-//             .then(async () => {
-//               /** change offer name */
-//               await driver
-//                 .findElement(By.xpath(offerNamePath))
-//                 .sendKeys(offerName);
-//               currentProgress += index * 3;
-//               // define delete button
+//             .findElement(By.css(inputSearchCss))
+//             .sendKeys(creativeName);
+//           currentProgress += 1;
+//           // send notify update progress
+//           handlePushNotifications(
+//             "update-progress",
+//             userId,
+//             null,
+//             null,
+//             (currentProgress / totalProgress) * 100
+//           );
 
-//               const btnDeleteCreativePath =
-//                 "//div[@aria-label='Delete Creative']//button[2]";
-//               await driver
-//                 .wait(
-//                   until.elementLocated({
-//                     xpath: btnDeleteCreativePath,
-//                   })
-//                 )
-//                 .then(async () => {
-//                   await driver
-//                     .findElement(By.xpath(btnDeleteCreativePath))
-//                     .click();
-//                   currentProgress += index * 4;
-//                   resolve("Run Sucess")
-//                   /****************** DONE ***************************/
-//                 })
-//                 .catch(reject);
-//             })
-//             .catch(reject);
+//           const btnSearchPath =
+//             "//div[@class='FPdoLc lJ9FBc']//input[@name='btnK']";
+//           await driver.findElement(By.xpath(btnSearchPath)).click();
+//           currentProgress += 1;
+//           // send notify update progress
+//           handlePushNotifications(
+//             "update-progress",
+//             userId,
+//             null,
+//             null,
+//             (currentProgress / totalProgress) * 100
+//           );
+//           // send notification status task
+//           handlePushNotifications(
+//             "notify-task",
+//             userId,
+//             { creativeName, offerName },
+//             true,
+//             null
+//           );
+//           if (index === numBrowsers - 1) {
+//             handleResetVariables();
+//           }
+//           resolve("Run success");
 //         })
 //         .catch(reject);
 //     } catch (error) {
+//       // send notification status task
+//       handlePushNotifications(
+//         "notify-task",
+//         userId,
+//         { creativeName, offerName },
+//         false,
+//         null
+//       );
+//       handleResetVariables();
 //       reject(error);
-//       await driver.sleep(2000);
+//     } finally {
+//       await driver.sleep(5000).then(async () => {
+//         await driver.quit();
+//       });
 //     }
 //   }).catch((err) => {
-//     console.log("RUN TEST FAILED", err);
+//     console.log("RUN TEST FAILED\n\n", err);
 //   });
 // };
+
 module.exports = {
   runTest,
   handleFetchMintegralRemoveCreative,
