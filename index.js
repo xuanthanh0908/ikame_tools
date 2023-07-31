@@ -48,7 +48,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // define logic routing for tiktok
-const createCampaignTikTok = catchAsync(async (req, res, next) => {
+const campaignTikTokController = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   if (isMulti) {
     await handleMultiFetchApi(req, res, next);
@@ -56,7 +56,7 @@ const createCampaignTikTok = catchAsync(async (req, res, next) => {
   res.status(200).send({ message: "success" });
 });
 // define logic routing for google ads
-const createCampaignGgAds = catchAsync(async (req, res, next) => {
+const campaignGoogleAdsController = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   if (isMulti) {
     await handleFetchMultiApiGgAds(req, res, next);
@@ -64,7 +64,7 @@ const createCampaignGgAds = catchAsync(async (req, res, next) => {
   res.status(200).send({ message: "success" });
 });
 // define logic routing for ads group
-const automateAdsGroup = catchAsync(async (req, res, next) => {
+const adsGroupController = catchAsync(async (req, res, next) => {
   const { isMulti } = req.body;
   // console.log(req.body);
   if (isMulti) {
@@ -73,15 +73,20 @@ const automateAdsGroup = catchAsync(async (req, res, next) => {
   res.status(200).send({ message: "success" });
 });
 // define logic routing for Deleted Creative Mintegral
-const automateMintegralDeletedCreative = catchAsync(async (req, res, next) => {
-  const { isMulti } = req.body;
-  await handMultiFetchMintegralRemovedCreative(req, res, next);
-  res.status(200).send({ message: "success" });
-});
-app.post("/tool/tiktok", createCampaignTikTok);
-app.post("/tool/google-ads", createCampaignGgAds);
-app.post("/tool/google-ads-group", automateAdsGroup);
-app.post("/tool/mintegral-deleted-creative", automateMintegralDeletedCreative);
+const deletedCreativeMintegralController = catchAsync(
+  async (req, res, next) => {
+    const { isMulti } = req.body;
+    await handMultiFetchMintegralRemovedCreative(req, res, next);
+    res.status(200).send({ message: "success" });
+  }
+);
+app.post("/tool/tiktok", campaignTikTokController);
+app.post("/tool/google-ads", campaignGoogleAdsController);
+app.post("/tool/google-ads-group", adsGroupController);
+app.post(
+  "/tool/mintegral-deleted-creative",
+  deletedCreativeMintegralController
+);
 // scheduleRun();
 
 // send back a 404 error for any unknown api request

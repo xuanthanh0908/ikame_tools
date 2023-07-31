@@ -8,8 +8,13 @@ const { readFile } = require("../utils/readfile");
 const { updateStatusCampaign } = require("./automate_titktok");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = "http://localhost:9000/api/v1";
+const {
+  BACKEND_CAMPAIGN_URL_VPS,
+  BACKEND_CAMPAIGN_URL_LOCAL,
+} = require("../config");
+
+const BACKEND_CAMPAIGN_URL_DEFINED = BACKEND_CAMPAIGN_URL_VPS;
+// const BACKEND_CAMPAIGN_URL_DEFINED = BACKEND_CAMPAIGN_URL_LOCAL
 const url = {
   CAMPAIGN: "/campaign",
   CAMPAIGN_UPDATE: "/campaign/update-by-one",
@@ -28,9 +33,12 @@ const updateAdsGroupCampaign = async (
   message = "Run test failed"
 ) => {
   try {
-    await axios.patch(backend_campaign_url + url.ADS_GROUP_UPDATE + "/" + id, {
-      status: status,
-    });
+    await axios.patch(
+      BACKEND_CAMPAIGN_URL_DEFINED + url.ADS_GROUP_UPDATE + "/" + id,
+      {
+        status: status,
+      }
+    );
     emitEvent("message", {
       message,
       type: "success",
@@ -1014,7 +1022,7 @@ const handleFetchMultiApiGgAds = catchAsync(async (req, res, next) => {
     throw new ApiError(400, "BAD REQUEST");
   }
 });
-// runTest();
+
 module.exports = {
   runTest,
   handleFetchApiGgAds,

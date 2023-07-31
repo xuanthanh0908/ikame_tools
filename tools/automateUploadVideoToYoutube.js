@@ -9,6 +9,13 @@ const crontab = require("node-crontab");
 const os = require("os");
 const fs = require("fs");
 const Queue = require("../utils/queue");
+const {
+  HRMS_API,
+  BACKEND_CAMPAIGN_URL_VPS,
+  IKAME_BOT_API_CREATIVE_AUTOMATION,
+  CHANNEL_ID,
+  BACKEND_CAMPAIGN_URL_LOCAL,
+} = require("../config");
 
 // Get the operating system platform
 const platform = os.platform();
@@ -16,22 +23,13 @@ const configHeader = {
   "Content-Type": "application/json",
   apikey: "dcXgdwbqU9sgZ6rGjWr8yAGXjGvHOgbi",
 };
-const POST_MESSAGE_BOT = {
-  IKAME_BOT_API_CREATIVE_AUTOMATION:
-    "https://bot.ikamegroup.com/api/v1/custom-notifications/creative-automation-message",
-  CHANNEL_ID: "D05DMJA84PK",
-};
+
 /**
  * set timeout for axios to 10s
  */
 axios.default.timeout = 10000;
-/**
- *
- *  */
-
-const hrms_api = "https://api-hrms.ikamegroup.com/api/v1";
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
-// const backend_campaign_url = "http://localhost:9000/api/v1"
+const BACKEND_CAMPAIGN_URL_DEFINED = BACKEND_CAMPAIGN_URL_VPS;
+// const BACKEND_CAMPAIGN_URL_DEFINED = BACKEND_CAMPAIGN_URL_LOCAL;
 const url = {
   YOUTUBE: "/youtube",
   HISTORY: "/history",
@@ -41,6 +39,11 @@ let x = 0,
   y = 0;
 // Create an array to store the WebDriver instances for each browser
 let drivers = [];
+/**
+ *
+ *
+ *
+ * */
 
 const diff = (a, b) => {
   return Math.abs(a - b);
@@ -49,7 +52,7 @@ const diff = (a, b) => {
 const fetchUserInfo = async (id) => {
   try {
     const response = await axios({
-      url: hrms_api + "/user" + id,
+      url: HRMS_API + "/user" + id,
       method: "GET",
       headers: configHeader,
     });
@@ -62,7 +65,7 @@ const fetchUserInfo = async (id) => {
 const fetchProductInfo = async (id) => {
   try {
     const response = await axios({
-      url: backend_campaign_url + "/product/" + id,
+      url: BACKEND_CAMPAIGN_URL_DEFINED + "/product/" + id,
       method: "GET",
       headers: configHeader,
     });
@@ -80,11 +83,11 @@ const handlePostMessage = async (data, status) => {
     createdAt: data.createdAt,
     uploadedBy: data.uploadedBy,
     createdBy: data.createdBy,
-    channelId: POST_MESSAGE_BOT.CHANNEL_ID,
+    channelId: CHANNEL_ID,
   };
   try {
     await axios({
-      url: POST_MESSAGE_BOT.IKAME_BOT_API_CREATIVE_AUTOMATION,
+      url: IKAME_BOT_API_CREATIVE_AUTOMATION,
       method: "POST",
       headers: configHeader,
       data: slack_data,
@@ -189,7 +192,7 @@ const creativeHistory = async (data, driver, file_path) => {
   const makeRequest = async () => {
     try {
       const res = await axios.post(
-        backend_campaign_url + url.HISTORY + "/",
+        BACKEND_CAMPAIGN_URL_DEFINED + url.HISTORY + "/",
         data
       );
       if (res.status === 201) {
@@ -215,7 +218,10 @@ const creativeHistory = async (data, driver, file_path) => {
 const updateCreative = async (id, data) => {
   const makeRequest = async () => {
     try {
-      await axios.patch(backend_campaign_url + url.YOUTUBE + "/" + id, data);
+      await axios.patch(
+        BACKEND_CAMPAIGN_URL_DEFINED + url.YOUTUBE + "/" + id,
+        data
+      );
     } catch (error) {
       console.log("===========API ERROR=================");
     }
@@ -233,7 +239,7 @@ const updateCreativeYTB = async (
     checked = true;
     try {
       const res = await axios.patch(
-        backend_campaign_url + url.YOUTUBE + "/" + id,
+        BACKEND_CAMPAIGN_URL_DEFINED + url.YOUTUBE + "/" + id,
         {
           status: status,
         }
@@ -259,67 +265,10 @@ const updateCreativeYTB = async (
   };
   networkOrFail(makeRequest, 5000);
 };
-
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
-};
-
-// handle step 01 - initial browser - change channel - change account
-const run_Now = (req, res, next, driver) => {
-  const { id, userId } = req.body;
-  const DATA = req.data;
-  // console.log("=============DATA==============", DATA);
-  return new Promise(async (resolve, reject) => {
-    try {
-      await driver.get("https://studio.youtube.com");
-      /// change channel
-      const chanel_path = "//button[@id='avatar-btn']";
-      /// update status is running
-      await updateCreativeYTB(id, "running", userId);
-      await driver
-        .findElement(By.xpath(chanel_path))
-        .click()
-        .then(async () => {
-          const switch_acc_path = "(//tp-yt-paper-item[@role='link'])[3]";
-          const findEl = await driver.findElement(By.xpath(switch_acc_path));
-          await driver
-            .executeScript("arguments[0].click();", findEl)
-            .then(async () => {
-              await driver.sleep(500).then(async () => {
-                // get all channel titl
-                const all_acc_id = "channel-title";
-                await driver
-                  .findElements(By.id(all_acc_id))
-                  .then(async (items) => {
-                    for (const item of items) {
-                      const text = await item.getText();
-                      if (text === DATA.channel_name) {
-                        await driver.executeScript(
-                          "arguments[0].scrollIntoView(true)",
-                          item
-                        );
-
-                        await item.click().then(async () => {
-                          handeleStep_02(DATA, driver, req, res, next)
-                            .then(() => resolve("success"))
-                            .catch(async (error) => {
-                              // await driver.quit();
-                              reject(error);
-                            });
-                        });
-                      }
-                    }
-                  });
-              });
-            });
-        });
-    } catch (error) {
-      await updateCreativeYTB(id, "actived", userId);
-      console.log("RUN TEST FAILED", error);
-    }
-  });
 };
 // handle read video path && run consequent
 const handeleStep_02 = async (DATA, driver, req, res, next) => {
@@ -569,7 +518,6 @@ const handeleStep_03 = async (
     }
   });
 };
-///////////////////////////
 // Create a function to open a new browser window and set its size
 const openBrowserWindow = async (data, index) => {
   const numBrowsers = data.length;
@@ -647,17 +595,20 @@ const openMultipleBrowsers = async () => {
     }
   }
 };
-///////////////////////////
 // handle run multiple creative youtube
 const handMultiFetchYTB = async () => {
   try {
     const response = await axios.get(
-      backend_campaign_url + url.YOUTUBE + "?status=actived&limit=2&type=Check"
+      BACKEND_CAMPAIGN_URL_DEFINED +
+        url.YOUTUBE +
+        "?status=actived&limit=1&type=Check"
     );
     if (response.status === 200) {
       const origin_data = response.data.data;
       const getProductById = await axios.get(
-        backend_campaign_url + "/product/" + origin_data[0]["product_id"]
+        BACKEND_CAMPAIGN_URL_DEFINED +
+          "/product/" +
+          origin_data[0]["product_id"]
       );
       origin_data[0]["productName"] = getProductById.data.data?.app_name;
       console.log(origin_data);
@@ -690,6 +641,69 @@ const scheduleRun = async () => {
       handMultiFetchYTB();
     } else {
       console.log("BROWSER OPENED");
+    }
+  });
+};
+/**
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @param {*} driver
+ * @returns
+ */
+// handle step 01 - initial browser - change channel - change account
+const run_Now = (req, res, next, driver) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
+  // console.log("=============DATA==============", DATA);
+  return new Promise(async (resolve, reject) => {
+    try {
+      await driver.get("https://studio.youtube.com");
+      /// change channel
+      const chanel_path = "//button[@id='avatar-btn']";
+      /// update status is running
+      await updateCreativeYTB(id, "running", userId);
+      await driver
+        .findElement(By.xpath(chanel_path))
+        .click()
+        .then(async () => {
+          const switch_acc_path = "(//tp-yt-paper-item[@role='link'])[3]";
+          const findEl = await driver.findElement(By.xpath(switch_acc_path));
+          await driver
+            .executeScript("arguments[0].click();", findEl)
+            .then(async () => {
+              await driver.sleep(500).then(async () => {
+                // get all channel titl
+                const all_acc_id = "channel-title";
+                await driver
+                  .findElements(By.id(all_acc_id))
+                  .then(async (items) => {
+                    for (const item of items) {
+                      const text = await item.getText();
+                      if (text === DATA.channel_name) {
+                        await driver.executeScript(
+                          "arguments[0].scrollIntoView(true)",
+                          item
+                        );
+
+                        await item.click().then(async () => {
+                          handeleStep_02(DATA, driver, req, res, next)
+                            .then(() => resolve("success"))
+                            .catch(async (error) => {
+                              // await driver.quit();
+                              reject(error);
+                            });
+                        });
+                      }
+                    }
+                  });
+              });
+            });
+        });
+    } catch (error) {
+      await updateCreativeYTB(id, "actived", userId);
+      console.log("RUN TEST FAILED", error);
     }
   });
 };

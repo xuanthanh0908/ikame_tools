@@ -319,8 +319,7 @@ const runTest = (req, res, next, driver, index, numBrowsers) => {
         })
         .catch(reject);
     } catch (error) {
-      totalProgress = 0;
-      currentProgress = 0;
+      handleResetVariables();
       reject(error);
       await driver.sleep(2000);
     }
@@ -402,7 +401,6 @@ const runTest = (req, res, next, driver, index, numBrowsers) => {
 //   }).catch((err) => {
 //     console.log("RUN TEST FAILED\n\n", err);
 //   });
-// };
 
 module.exports = {
   runTest,
