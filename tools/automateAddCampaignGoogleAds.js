@@ -5,7 +5,7 @@ const webdriver = require("selenium-webdriver");
 const ApiError = require("../utils/apiError");
 const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
-const { updateStatusCampaign } = require("./automate_titktok");
+const { updateStatusCampaign } = require("./automateAddCampaignTiktok");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
 const {
