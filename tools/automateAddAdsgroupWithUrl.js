@@ -42,251 +42,8 @@ const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
-const runTest = (req, res, next) => {
-  const { id, userId } = req.body;
-  const DATA = req.data;
-  // console.log("=============DATA==============", DATA);
-  const max_time = 30000;
-  return new Promise(async (resolve, reject) => {
-    readFile()
-      .then(async (path) => {
-        // init maxtime
-        let options = new firefox.Options();
-
-        options.setProfile(path);
-        options.setPreference("layout.css.devPixelsPerPx", "0.7");
-        //To wait for browser to build and launch properly
-        let driver = await new webdriver.Builder()
-          .forBrowser("firefox")
-          .setFirefoxOptions(options)
-          .build();
-        driver.manage().window().maximize();
-        try {
-          await driver.get(DATA.campaign_url);
-          await handleStep1(DATA, driver, userId, id);
-
-          const loading_page = "//div[contains(text(),'Ad group name')]";
-          await driver
-            .wait(
-              until.elementLocated({
-                xpath: loading_page,
-              }),
-              max_time
-            )
-            .then(async () => {
-              /// wait for load down components loaded
-              const ads_group_name_path = "(//input[@type='text'])[2]";
-              const condition = until.elementLocated({
-                xpath: ads_group_name_path,
-              });
-              await driver.wait(condition, max_time).then(async () => {
-                const ads_group = await driver.findElement(
-                  By.xpath(ads_group_name_path)
-                );
-
-                clearInput(ads_group).then(async () => {
-                  await ads_group
-                    .sendKeys(DATA.ads_group_name)
-                    .then(async () => {
-                      // handle headline
-                      const input_headline_path =
-                        "(//input[@aria-label='Headline 1 of 5'])[1]";
-                      const conditions_01 = until.elementLocated({
-                        xpath: input_headline_path,
-                      });
-                      await driver
-                        .wait(conditions_01, max_time)
-                        .then(async () => {
-                          // console.log("DATA.headline", DATA.headline);
-                          for (const [
-                            index,
-                            value,
-                          ] of DATA.headline.entries()) {
-                            const input_headline_path =
-                              "(//input[@aria-label='Headline " +
-                              (index + 1) +
-                              " of 5'])[1]";
-                            await driver
-                              .findElement(By.xpath(input_headline_path))
-                              .sendKeys(value);
-                          }
-                          for (const [index, value] of DATA.desc.entries()) {
-                            const input_des_path =
-                              "(//input[@aria-label='Description " +
-                              (index + 1) +
-                              " of 5'])[1]";
-                            await driver
-                              .findElement(By.xpath(input_des_path))
-                              .sendKeys(value);
-                          }
-
-                          if (
-                            DATA.videos &&
-                            DATA.videos[0]?.length > 0 &&
-                            DATA.videos.length > 0
-                          ) {
-                            await handleStep2(DATA, driver, userId, id);
-                            console.log("=====VIDEO RUNNING=====");
-                          }
-                          if (
-                            DATA.images &&
-                            DATA.images[0]?.length > 0 &&
-                            DATA.images.length > 0
-                          ) {
-                            await handleStep3(DATA, driver, userId, id);
-                            console.log("=====IMAGE RUNNING=====");
-                          }
-
-                          nextAction(DATA, driver, userId, id)
-                            .then(() => resolve("success"))
-                            .catch(reject);
-                          
-                        });
-                    });
-                });
-              });
-            });
-        } catch (error) {
-          await driver.quit();
-          updateAdsGroupCampaign(id, "canceled", userId);
-          reject(error);
-        }
-      })
-      .catch(async (err) => {
-        console.log("RUN TEST FAILED", err);
-        updateAdsGroupCampaign(id, "canceled", userId);
-      });
-  });
-};
-/// handle get and choose campaign id
-const handleStep1 = async (DATA, driver, id, userId) => {
-  const max_time = 30000;
-  const soft_time = 500;
-  return new Promise(async (resolve, reject) => {
-    try {
-      /// handle change account
-      const drop_down_path = ".button-content material-icon";
-      const loading_path = "mat-checkbox";
-      const condition = until.elementLocated({
-        tagName: loading_path,
-      });
-      // handle choose default status ALL
-      const cp_status_drowdown_path = "(//material-chip[@role='row'])[1]";
-      const condition_01 = until.elementLocated({
-        xpath: cp_status_drowdown_path,
-      });
-      await driver.wait(condition_01, max_time).then(async () => {
-        const dropdown_status = await driver.findElement(
-          By.xpath(cp_status_drowdown_path)
-        );
-        await driver.sleep(soft_time).then(async () => {
-          await driver
-            .executeScript("arguments[0].click();", dropdown_status)
-            .then(async () => {
-              const all_items_path =
-                "//material-select-item[normalize-space()='All']";
-              const condition_02 = until.elementLocated({
-                xpath: all_items_path,
-              });
-              await driver.wait(condition_02, max_time).then(async () => {
-                const findDrop = await driver.findElement(
-                  By.xpath(all_items_path)
-                );
-                await driver.executeScript("arguments[0].click();", findDrop);
-
-                /// wait data of all campaign
-                const loading_classname = "campaign-icon-app";
-                await driver
-                  .wait(
-                    until.elementLocated({
-                      className: loading_classname,
-                    }),
-                    max_time
-                  )
-                  .then(async () => {
-                    await driver.wait(condition, max_time).then(async () => {
-                      const dropdown = await driver.findElement(
-                        By.css(drop_down_path)
-                      );
-                      await driver.sleep(soft_time).then(async () => {
-                        driver
-                          .executeScript("arguments[0].click();", dropdown)
-                          .then(async () => {
-                            const input_search_campaign_path =
-                              ".search-input .input-container .input.input-area";
-                            const condition = until.elementLocated({
-                              css: drop_down_path,
-                            });
-                            await driver
-                              .wait(condition, max_time)
-                              .then(async () => {
-                                await driver
-                                  .findElement({
-                                    css: input_search_campaign_path,
-                                  })
-                                  .sendKeys(DATA.campaign_name)
-                                  .then(async () => {
-                                    await driver
-                                      .sleep(soft_time)
-                                      .then(async () => {
-                                        const campaign_css =
-                                          "material-list span + material-select-dropdown-item";
-                                        const condition = until.elementLocated({
-                                          css: campaign_css,
-                                        });
-                                        await driver
-                                          .wait(condition, max_time)
-                                          .then(async () => {
-                                            await driver
-                                              .findElement(By.css(campaign_css))
-                                              .click()
-                                              .then(async () => {
-                                                const button_add_path =
-                                                  "//i[normalize-space()='add']";
-                                                const condition =
-                                                  until.elementLocated({
-                                                    xpath: button_add_path,
-                                                  });
-                                                await driver
-                                                  .wait(condition, max_time)
-                                                  .then(async () => {
-                                                    const btn_ads =
-                                                      await driver.findElement(
-                                                        By.xpath(
-                                                          button_add_path
-                                                        )
-                                                      );
-                                                    await driver
-                                                      .executeScript(
-                                                        "arguments[0].click()",
-                                                        btn_ads
-                                                      )
-                                                      .then(() =>
-                                                        resolve("success")
-                                                      );
-                                                  });
-                                              });
-                                          });
-                                      });
-                                  });
-                              });
-                          });
-                      });
-                    });
-                  });
-              });
-            });
-        });
-      });
-    } catch (error) {
-      reject(error);
-      console.log("RUN TEST FAILED", error);
-      updateAdsGroupCampaign(id, "canceled", userId);
-    }
-  });
-};
 /// handle choose video youtube
-const handleStep2 = async (DATA, driver, id, userId) => {
+const handleStep1 = async (DATA, driver, id, userId) => {
   const soft_time = 1000;
   const max_time = 30000;
   return new Promise(async (resolve, reject) => {
@@ -359,7 +116,7 @@ const handleStep2 = async (DATA, driver, id, userId) => {
   });
 };
 /// handle choose image
-const handleStep3 = async (DATA, driver, userId, id) => {
+const handleStep2 = async (DATA, driver, userId, id) => {
   // console.log('CHECK IMAGE')
   return new Promise(async (resolve, reject) => {
     try {
@@ -386,7 +143,7 @@ const handleStep3 = async (DATA, driver, userId, id) => {
                       await driver
                         .findElements(By.className(from_pc_class))
                         .then(async (pc) => {
-                          handleStep4(DATA, pc[0], driver, userId, id)
+                          handleStep3(DATA, pc[0], driver, userId, id)
                             .then(() => resolve("success"))
                             .catch(reject);
                         });
@@ -404,7 +161,7 @@ const handleStep3 = async (DATA, driver, userId, id) => {
   });
 };
 /// handle choose image
-const handleStep4 = async (DATA, element, driver, userId, id) => {
+const handleStep3 = async (DATA, element, driver, userId, id) => {
   return new Promise(async (resolve, reject) => {
     try {
       const max_time = 30000;
@@ -519,6 +276,126 @@ const handMultiFetchAdsGroup = catchAsync(async (req, res, next) => {
     throw new ApiError(400, "BAD REQUEST");
   }
 });
+/**
+ *
+ *
+ * MAIN FUNCTION
+ *
+ */
+const runTest = (req, res, next) => {
+  const { id, userId } = req.body;
+  const DATA = req.data;
+  // console.log("=============DATA==============", DATA);
+  const max_time = 30000;
+  return new Promise(async (resolve, reject) => {
+    readFile()
+      .then(async (path) => {
+        // init maxtime
+        let options = new firefox.Options();
+
+        options.setProfile(path);
+        options.setPreference("layout.css.devPixelsPerPx", "0.7");
+        //To wait for browser to build and launch properly
+        let driver = await new webdriver.Builder()
+          .forBrowser("firefox")
+          .setFirefoxOptions(options)
+          .build();
+        driver.manage().window().maximize();
+        try {
+          await driver.get(DATA.ads_group_url);
+          // await handleStep1(DATA, driver, userId, id);
+          const loading_page = "//div[contains(text(),'Ad group name')]";
+          await driver
+            .wait(
+              until.elementLocated({
+                xpath: loading_page,
+              }),
+              max_time
+            )
+            .then(async () => {
+              /// wait for load down components loaded
+              const ads_group_name_path = "(//input[@type='text'])[2]";
+              const condition = until.elementLocated({
+                xpath: ads_group_name_path,
+              });
+              await driver.wait(condition, max_time).then(async () => {
+                const ads_group = await driver.findElement(
+                  By.xpath(ads_group_name_path)
+                );
+
+                clearInput(ads_group).then(async () => {
+                  await ads_group
+                    .sendKeys(DATA.ads_group_name)
+                    .then(async () => {
+                      // handle headline
+                      const input_headline_path =
+                        "(//input[@aria-label='Headline 1 of 5'])[1]";
+                      const conditions_01 = until.elementLocated({
+                        xpath: input_headline_path,
+                      });
+                      await driver
+                        .wait(conditions_01, max_time)
+                        .then(async () => {
+                          // console.log("DATA.headline", DATA.headline);
+                          for (const [
+                            index,
+                            value,
+                          ] of DATA.headline.entries()) {
+                            const input_headline_path =
+                              "(//input[@aria-label='Headline " +
+                              (index + 1) +
+                              " of 5'])[1]";
+                            await driver
+                              .findElement(By.xpath(input_headline_path))
+                              .sendKeys(value);
+                          }
+                          for (const [index, value] of DATA.desc.entries()) {
+                            const input_des_path =
+                              "(//input[@aria-label='Description " +
+                              (index + 1) +
+                              " of 5'])[1]";
+                            await driver
+                              .findElement(By.xpath(input_des_path))
+                              .sendKeys(value);
+                          }
+
+                          if (
+                            DATA.videos &&
+                            DATA.videos[0]?.length > 0 &&
+                            DATA.videos.length > 0
+                          ) {
+                            await handleStep1(DATA, driver, userId, id);
+                            console.log("=====VIDEO RUNNING=====");
+                          }
+                          if (
+                            DATA.images &&
+                            DATA.images[0]?.length > 0 &&
+                            DATA.images.length > 0
+                          ) {
+                            await handleStep2(DATA, driver, userId, id);
+                            console.log("=====IMAGE RUNNING=====");
+                          }
+
+                          nextAction(DATA, driver, userId, id)
+                            .then(() => resolve("success"))
+                            .catch(reject);
+                        });
+                    });
+                });
+              });
+            });
+        } catch (error) {
+          await driver.quit();
+          updateAdsGroupCampaign(id, "canceled", userId);
+          reject(error);
+        }
+      })
+      .catch(async (err) => {
+        console.log("RUN TEST FAILED", err);
+        updateAdsGroupCampaign(id, "canceled", userId);
+      });
+  });
+};
 // runTest();
 module.exports = {
   runTest,

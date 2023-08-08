@@ -1,5 +1,4 @@
 const { By, until } = require("selenium-webdriver");
-// const axios = require("axios");
 const firefox = require("selenium-webdriver/firefox");
 const webdriver = require("selenium-webdriver");
 const ApiError = require("../utils/apiError");
@@ -19,7 +18,7 @@ const { emitEvent } = require("../utils/socket");
  */
 let totalProgress = 0;
 let currentProgress = 0;
-const totalStepsCompleted = 2;
+const totalStepsCompletedEachBrowser = 4;
 let x = 0,
   y = 0;
 // Create an array to store the WebDriver instances for each browser
@@ -36,7 +35,7 @@ const openBrowserWindow = async (data, index) => {
       try {
         // init maxtime
         let options = new firefox.Options();
-
+        options.add_argument("--headless");
         options.setProfile(path);
         options.setPreference("layout.css.devPixelsPerPx", "0.7");
         //To wait for browser to build and launch properly
@@ -123,7 +122,7 @@ const checkBrowserIsOpened = async () => {
 const openMultipleBrowsers = async (data) => {
   // console.log(data);
   const numBrowsers = data?.listMintegralDeletedCreative?.length;
-  totalProgress = numBrowsers * totalStepsCompleted;
+  totalProgress = numBrowsers * totalStepsCompletedEachBrowser;
   for (let i = 0; i < numBrowsers; i++) {
     await openBrowserWindow(data, i, numBrowsers);
   }
@@ -321,7 +320,10 @@ const runTest = (req, res, next, driver, index, numBrowsers) => {
     } catch (error) {
       handleResetVariables();
       reject(error);
-      await driver.sleep(2000);
+    } finally {
+      await driver.sleep(5000).then(async () => {
+        await driver.quit();
+      });
     }
   }).catch((err) => {
     console.log("RUN TEST FAILED\n\n", err);

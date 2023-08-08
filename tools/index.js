@@ -5,7 +5,7 @@ const {
 const {
   handFetchAdsGroup,
   handMultiFetchAdsGroup,
-} = require("../tools/automateAddAdsGroup");
+} = require("../tools/automateAddAdsgroupWithUrl");
 const {
   handleFetchApi,
   handleMultiFetchApi,
