@@ -244,7 +244,7 @@ const runTest = (req, res, next, driver, index, numBrowsers) => {
       );
       // define path delete button
       const btnDeletePath =
-        "//button[@class='el-button text--red el-button--text']";
+        "//button[@class='el-button text--red el-button--text el-button--small']";
       await driver
         .wait(
           until.elementLocated({
