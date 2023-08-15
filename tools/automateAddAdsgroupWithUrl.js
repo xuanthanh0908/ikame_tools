@@ -244,7 +244,7 @@ const handFetchAdsGroup = catchAsync(async (req, res, next) => {
   const { data } = req.body;
   try {
     req.data = data;
-    // console.log("Data", data);
+    console.log("Data", data);
     req.body = {
       ...req.body,
       id: data._id,
@@ -253,7 +253,8 @@ const handFetchAdsGroup = catchAsync(async (req, res, next) => {
       await runTest(req, res, next);
     }
   } catch (error) {
-    throw new ApiError(400, "BAD REQUEST");
+    console.log(error);
+    // throw new ApiError(400, "BAD REQUEST");
   }
 });
 // handle run multiple campaign ads group

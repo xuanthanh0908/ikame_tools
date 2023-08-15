@@ -9,6 +9,7 @@ const { emitEvent } = require("../utils/socket");
 const readline = require("readline");
 const fs = require("fs");
 const { Actions } = require("selenium-webdriver/lib/input");
+const { readFile } = require("../utils/readfile");
 const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9001/api/v1";
 const url = {
@@ -16,8 +17,6 @@ const url = {
   CAMPAIGN_UPDATE: "/campaign/update-by-one",
 };
 
-// const profile =
-//   "C:\\Users\\hd131\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\9azfairu.default-release";
 // clear input
 const clearInput = async (driver, xpath) => {
   await driver.findElement(By.xpath(xpath)).sendKeys(Key.CONTROL, "a");
@@ -518,40 +517,22 @@ const waitSwitchStatus = async (driver, data, userId, id) => {
 };
 
 const runTest = (req, res, next) => {
-  let driver;
+  const data = req.data;
+  const { id } = data;
+  const userId = req.body.userId;
   return new Promise(async (resolve, reject) => {
-    try {
-      let profile = [];
-      const appDataPath =
-        process.env.APPDATA + "\\Mozilla\\Firefox\\profiles.ini"; // Get the path to the AppData folder
-      const readInterface = readline.createInterface({
-        input: fs.createReadStream(appDataPath),
-        output: process.stdout,
-        console: false,
-      });
-      readInterface.on("line", function (line) {
-        profile.push(line);
-      });
-
-      /// wait for readInterface to close
-      events.once(readInterface, "close").then(async (e) => {
-        const profilePath =
-          process.env.APPDATA +
-          "\\Mozilla\\Firefox\\" +
-          profile[1].split("=")[1];
-        const data = req.data;
-        // console.log("data", data);
-        const { id, userId } = req.body;
+    readFile()
+      .then(async (path) => {
+        // init maxtime
         let options = new firefox.Options();
-        options.setProfile(profilePath);
-        options.setPreference("layout.css.devPixelsPerPx", "0.6");
 
+        options.setProfile(path);
+        options.setPreference("layout.css.devPixelsPerPx", "0.7");
         //To wait for browser to build and launch properly
-        driver = await new webdriver.Builder()
+        let driver = await new webdriver.Builder()
           .forBrowser("firefox")
           .setFirefoxOptions(options)
           .build();
-
         driver.manage().window().maximize();
         try {
           await driver.get(data.campaign_url);
@@ -571,8 +552,8 @@ const runTest = (req, res, next) => {
                   .catch((e) => reject(e));
               });
           });
-        } catch (e) {
-          console.log("RUN TEST FAILED", e);
+        } catch (error) {
+          console.log("RUN TEST FAILED", error);
           updateStatusCampaign(id, "canceled", userId);
         } finally {
           const startOverPath =
@@ -592,50 +573,42 @@ const runTest = (req, res, next) => {
               });
           }
         }
+      })
+      .catch(async (err) => {
+        console.log("RUN TEST FAILED", err);
+        updateStatusCampaign(id, "canceled", userId);
       });
-    } catch (error) {
-      reject(error);
-      console.log("RUN TEST FAILED", e);
-      updateStatusCampaign(id, "canceled", userId);
-    }
   });
 };
 
 const handleFetchApi = catchAsync(async (req, res, next) => {
-  const { id } = req.body;
   try {
-    const response = await axios.get(
-      backend_campaign_url + url.CAMPAIGN + "/" + id
-    );
-    if (response.status === 200) {
-      const origin_data = response.data.data;
-      // console.log("origin_data", origin_data);
-      let formattedDate = new Date(origin_data.start_date)
-        .toISOString()
-        .slice(0, 10);
+    const origin_data = req.body.data;
+    // console.log("origin_data", origin_data);
+    let formattedDate = new Date(origin_data.start_date)
+      .toISOString()
+      .slice(0, 10);
 
-      const campaign_data = {
-        campaign_url: origin_data.campaign_url,
-        campaign_name: origin_data.campaign_name,
-        app_name: origin_data.product,
-        locations: origin_data.locations,
-        // languages: origin_data.languages,
-        budget: origin_data.budget,
-        startDate: {
-          date: formattedDate,
-          time: "00:00",
-        },
-        videos: origin_data.ads_groups[0].videos,
-        texts: origin_data.ads_groups[0].headline,
-        // profile: origin_data.profile,
-      };
-      // console.log("==========DATA===========", campaign_data);
-      req.data = campaign_data;
-      if (origin_data.status === "pending" || origin_data.status === "canceled")
-        runTest(req, res, next);
-    } else throw new ApiError(400, "BAD REQUEST");
+    const campaign_data = {
+      id: origin_data._id,
+      campaign_url: origin_data.campaign_url,
+      campaign_name: origin_data.campaign_name,
+      app_name: origin_data.product,
+      locations: origin_data.locations,
+      budget: origin_data.budget,
+      startDate: {
+        date: formattedDate,
+        time: "00:00",
+      },
+      videos: origin_data.ads_groups[0].videos,
+      texts: origin_data.ads_groups[0].headline,
+      // profile: origin_data.profile,
+    };
+    req.data = campaign_data;
+    if (origin_data.status === "pending" || origin_data.status === "canceled")
+      runTest(req, res, next);
   } catch (error) {
-    throw new ApiError(400, "BAD REQUEST");
+    console.log(error);
   }
 });
 const handleMultiFetchApi = catchAsync(async (req, res, next) => {
