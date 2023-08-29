@@ -346,11 +346,11 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                     });
                 }
                 // handle next button ==== MAYBE THE PATH DOES NOT BE CHANGED
-                const next_button_path =
-                  "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']";
-                const next = await driver.findElement(
-                  By.xpath(next_button_path)
-                );
+                // const next_button_path =
+                //   "//dynamic-component[@class='content-element _ngcontent-awn-CM_EDITING-39']//div[@class='_ngcontent-awn-CM_EDITING-42']//material-button[@role='button']";
+                const next_button_css =
+                  '.active-module-node .construction-layout-root construction-layout-engine + div .button-next[aria-disabled="false"] .content + material-ripple';
+                const next = await driver.findElement(By.css(next_button_css));
                 await driver
                   .executeScript("arguments[0].click()", next)
                   .then(async () => {
