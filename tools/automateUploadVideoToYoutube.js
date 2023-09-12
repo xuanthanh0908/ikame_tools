@@ -231,7 +231,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       const title = files.map((file) => file);
       const filePaths = files.map(
         (file) =>
-          `${DATA.video_path} ${platform === "darwin" ? "/" : "\\"}${file}`
+          `${DATA.video_path}${platform === "darwin" ? "/" : "\\"}${file}`
       );
       for (const [index, filePath] of filePaths.entries()) {
         await handeleStep_03(
