@@ -15,7 +15,7 @@ const { readFile } = require("../utils/readfile");
 // ];
 
 const handleRunMultipleMain = async (req, res) => {
-  const { text_csv, listAdjustLinks } = req.data;
+  const { text_csv, listAdjustLinks } = req.body.data;
   try {
     // loops
     for (const link of listAdjustLinks) {
@@ -97,7 +97,7 @@ const Main = (data, text_csv) => {
       });
   });
 };
-// handleRunMultipleMain();
+// Main(listAdjustLinks[0], "OK");
 module.exports = {
   handleRunMultipleMain,
 };
