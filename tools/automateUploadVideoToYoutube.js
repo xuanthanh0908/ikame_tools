@@ -9,13 +9,7 @@ const crontab = require("node-crontab");
 const os = require("os");
 const fs = require("fs");
 const Queue = require("../utils/queue");
-const {
-  HRMS_API,
-  BACKEND_CAMPAIGN_URL_VPS,
-  IKAME_BOT_API_CREATIVE_AUTOMATION,
-  CHANNEL_ID,
-  BACKEND_CAMPAIGN_URL_LOCAL,
-} = require("../config");
+const { BACKEND_CAMPAIGN_URL_VPS } = require("../config");
 
 // Get the operating system platform
 const platform = os.platform();
@@ -47,54 +41,6 @@ let drivers = [];
 
 const diff = (a, b) => {
   return Math.abs(a - b);
-};
-// fetch User Info
-const fetchUserInfo = async (id) => {
-  try {
-    const response = await axios({
-      url: HRMS_API + "/user" + id,
-      method: "GET",
-      headers: configHeader,
-    });
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-// fetch product info
-const fetchProductInfo = async (id) => {
-  try {
-    const response = await axios({
-      url: BACKEND_CAMPAIGN_URL_DEFINED + "/product/" + id,
-      method: "GET",
-      headers: configHeader,
-    });
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-// handle post message success to upload video
-const handlePostMessage = async (data, status) => {
-  const slack_data = {
-    productName: data.productName,
-    status: data.status,
-    progress: data.progress,
-    createdAt: data.createdAt,
-    uploadedBy: data.uploadedBy,
-    createdBy: data.createdBy,
-    channelId: CHANNEL_ID,
-  };
-  try {
-    await axios({
-      url: IKAME_BOT_API_CREATIVE_AUTOMATION,
-      method: "POST",
-      headers: configHeader,
-      data: slack_data,
-    });
-  } catch (error) {
-    console.log(error);
-  }
 };
 
 // handle check internet connection status
@@ -148,20 +94,23 @@ async function checkBrowserClosed(driver) {
 }
 // Continuously poll to check if the browser window is closed
 async function pollBrowserClosed(drivers) {
-  for (const driver of drivers) {
-    const isClosed = await checkBrowserClosed(driver);
-    if (isClosed) {
-      console.log("Firefox browser closed");
-      // Additional cleanup or actions after browser close
-      drivers.splice(drivers.indexOf(driver), 1);
-      break;
+  let check = false;
+  if (drivers?.length > 0) {
+    check = true;
+    for (const driver of drivers) {
+      const isClosed = await checkBrowserClosed(driver);
+      if (isClosed) {
+        console.log("Firefox browser closed");
+        // Additional cleanup or actions after browser close
+        drivers.splice(drivers.indexOf(driver), 1);
+        break;
+      }
+      // await driver.sleep(1000); // Wait for 1 second before polling again
     }
-    await driver.sleep(1000); // Wait for 1 second before polling again
   }
+  return check;
 }
-const checkBrowserIsOpened = async () => {
-  return drivers.length > 0;
-};
+
 const checkInternetConnection = async () => {
   try {
     // Create a new instance of the WebDriver
@@ -611,7 +560,7 @@ const handMultiFetchYTB = async () => {
           origin_data[0]["product_id"]
       );
       origin_data[0]["productName"] = getProductById.data.data?.app_name;
-      console.log(origin_data);
+      // console.log(origin_data);
       q.send(origin_data);
       /// reset x, y
       x = 0;
@@ -635,8 +584,7 @@ const scheduleRun = async () => {
   // console.log("CHECKED CRON JOB RUN");
   crontab.scheduleJob("*/15 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
-    const checkOpened = await checkBrowserIsOpened();
-    await pollBrowserClosed(drivers);
+    const checkOpened = await pollBrowserClosed(drivers);
     if (!checkOpened) {
       handMultiFetchYTB();
     } else {
@@ -646,11 +594,10 @@ const scheduleRun = async () => {
 };
 /**
  *
- * @param {*} req
- * @param {*} res
- * @param {*} next
- * @param {*} driver
- * @returns
+ *
+ *          MAIN
+ *
+ *
  */
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {

@@ -10,7 +10,7 @@ const readline = require("readline");
 const fs = require("fs");
 const { Actions } = require("selenium-webdriver/lib/input");
 const { readFile } = require("../utils/readfile");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+const backend_campaign_url = "https://bs.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9001/api/v1";
 const url = {
   CAMPAIGN: "/campaign",

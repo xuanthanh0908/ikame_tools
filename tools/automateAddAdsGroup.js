@@ -7,7 +7,7 @@ const catchAsync = require("../utils/catchAsync");
 const { readFile } = require("../utils/readfile");
 const { emitEvent } = require("../utils/socket");
 const fs = require("fs");
-const backend_campaign_url = "https://api.ikamegroup.com/api/v1";
+const backend_campaign_url = "https://bs.ikamegroup.com/api/v1";
 // const backend_campaign_url = "http://localhost:9000/api/v1";
 const url = {
   ADSGROUP: "/ads-asset",
@@ -95,7 +95,7 @@ const runTest = (req, res, next) => {
                 const ads_group = await driver.findElement(
                   By.xpath(ads_group_name_path)
                 );
-              
+
                 clearInput(ads_group).then(async () => {
                   await ads_group
                     .sendKeys(DATA.ads_group_name)
@@ -114,7 +114,6 @@ const runTest = (req, res, next) => {
                             index,
                             value,
                           ] of DATA.headline.entries()) {
-                            
                             const input_headline_path =
                               "(//input[@aria-label='Headline " +
                               (index + 1) +

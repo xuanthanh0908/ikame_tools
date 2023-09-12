@@ -15,6 +15,10 @@ const {
   handMultiFetchMintegralRemovedCreative,
   handleFetchMintegralRemoveCreative,
 } = require("../tools/automateDeletedCreativeMintegral");
+
+const {
+  handleRunMultipleMain,
+} = require("../tools/automateFillPlaceholderInAdjust");
 module.exports = {
   handleFetchApiGgAds,
   handleFetchMultiApiGgAds,
@@ -25,4 +29,5 @@ module.exports = {
   scheduleRun,
   handMultiFetchMintegralRemovedCreative,
   handleFetchMintegralRemoveCreative,
+  handleRunMultipleMain,
 };

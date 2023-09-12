@@ -11,6 +11,7 @@ const {
   scheduleRun,
   handMultiFetchMintegralRemovedCreative,
   handleFetchMintegralRemoveCreative,
+  handleRunMultipleMain,
 } = require("./tools/");
 const cors = require("cors");
 const socketIo = require("socket.io");
@@ -80,9 +81,16 @@ const deletedCreativeMintegralController = catchAsync(
     res.status(200).send({ message: "success" });
   }
 );
+// define logic routing for Deleted Creative Mintegral
+const fillPlaceholderInAdjustController = catchAsync(async (req, res, next) => {
+  const { isMulti } = req.body;
+  await handleRunMultipleMain(req, res, next);
+  res.status(200).send({ message: "Tool is running ..." });
+});
 app.post("/tool/tiktok", campaignTikTokController);
 app.post("/tool/google-ads", campaignGoogleAdsController);
 app.post("/tool/google-ads-group", adsGroupController);
+app.post("/tool/fill-placeholder-in-adjust", fillPlaceholderInAdjustController);
 app.post(
   "/tool/mintegral-deleted-creative",
   deletedCreativeMintegralController
