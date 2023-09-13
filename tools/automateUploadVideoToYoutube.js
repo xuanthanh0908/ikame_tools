@@ -140,35 +140,14 @@ const updateCreativeYTB = async (
   userId,
   message = "Run test failed"
 ) => {
-  const makeRequest = async () => {
-    checked = true;
-    try {
-      const res = await axios.patch(
-        backend_campaign_url + url.YOUTUBE + "/" + id,
-        {
-          status: status,
-        }
-      );
-      if (!res) {
-        checked = false;
-      }
-      emitEvent("message", {
-        message: "run test success",
-        type: "success",
-        userId,
-      });
-    } catch (error) {
-      checked = false;
-      // console.log("===========API ERROR=================", error);
-      emitEvent("message", {
-        message,
-        type: "run test failed",
-        userId,
-      });
-    }
-    return checked;
-  };
-  networkOrFail(makeRequest, 5000);
+  return new Promise(async (resolve, reject) => {
+    axios
+      .patch(backend_campaign_url + url.YOUTUBE + "/" + id, {
+        status: status,
+      })
+      .then(() => resolve("OK"))
+      .catch(reject);
+  });
 };
 
 /// clear input
@@ -188,44 +167,49 @@ const run_Now = (req, res, next, driver) => {
       /// change channel
       const chanel_path = "//button[@id='avatar-btn']";
       /// update status is running
-      await updateCreativeYTB(id, "running", userId);
-      await driver
-        .findElement(By.xpath(chanel_path))
-        .click()
+      updateCreativeYTB(id, "running", userId)
         .then(async () => {
-          const switch_acc_path = "(//tp-yt-paper-item[@role='link'])[3]";
-          const findEl = await driver.findElement(By.xpath(switch_acc_path));
           await driver
-            .executeScript("arguments[0].click();", findEl)
+            .findElement(By.xpath(chanel_path))
+            .click()
             .then(async () => {
-              await driver.sleep(500).then(async () => {
-                // get all channel titl
-                const all_acc_id = "channel-title";
-                await driver
-                  .findElements(By.id(all_acc_id))
-                  .then(async (items) => {
-                    for (const item of items) {
-                      const text = await item.getText();
-                      if (text === DATA.channel_name) {
-                        await driver.executeScript(
-                          "arguments[0].scrollIntoView(true)",
-                          item
-                        );
+              const switch_acc_path = "(//tp-yt-paper-item[@role='link'])[3]";
+              const findEl = await driver.findElement(
+                By.xpath(switch_acc_path)
+              );
+              await driver
+                .executeScript("arguments[0].click();", findEl)
+                .then(async () => {
+                  await driver.sleep(500).then(async () => {
+                    // get all channel titl
+                    const all_acc_id = "channel-title";
+                    await driver
+                      .findElements(By.id(all_acc_id))
+                      .then(async (items) => {
+                        for (const item of items) {
+                          const text = await item.getText();
+                          if (text === DATA.channel_name) {
+                            await driver.executeScript(
+                              "arguments[0].scrollIntoView(true)",
+                              item
+                            );
 
-                        await item.click().then(async () => {
-                          handeleStep_02(DATA, driver, req, res, next)
-                            .then(() => resolve("success"))
-                            .catch(async (error) => {
-                              // await driver.quit();
-                              reject(error);
+                            await item.click().then(async () => {
+                              handeleStep_02(DATA, driver, req, res, next)
+                                .then(() => resolve("success"))
+                                .catch(async (error) => {
+                                  // await driver.quit();
+                                  reject(error);
+                                });
                             });
-                        });
-                      }
-                    }
+                          }
+                        }
+                      });
                   });
-              });
+                });
             });
-        });
+        })
+        .catch(reject);
     } catch (error) {
       await updateCreativeYTB(id, "actived", userId);
       console.log("RUN TEST FAILED", error);
