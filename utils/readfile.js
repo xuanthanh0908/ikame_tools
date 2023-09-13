@@ -36,7 +36,7 @@ const readFile = () => {
         const profileWinOsPath =
           process.env.APPDATA +
           "\\Mozilla\\Firefox\\" +
-          profile[1].split("=")[1];
+          profile[3].split("=")[1];
         resolve(profileWinOsPath);
       }
     });
