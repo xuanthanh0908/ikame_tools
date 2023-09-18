@@ -149,13 +149,11 @@ const updateCreativeYTB = async (
       .catch(reject);
   });
 };
-
 /// clear input
 const clearInput = async (el) => {
   await el.sendKeys(Key.CONTROL, "a");
   await el.sendKeys(Key.DELETE);
 };
-
 // handle step 01 - initial browser - change channel - change account
 const run_Now = (req, res, next, driver) => {
   const { id, userId } = req.body;
@@ -261,8 +259,7 @@ const handeleStep_02 = async (DATA, driver, req, res, next) => {
       await updateCreativeYTB(id, "actived", userId);
       reject(error);
     } finally {
-      const twoMinus = 2 * 60 * 1000;
-      // const twoMinus = 5000;
+      const twoMinus = 2.5 * 60 * 1000;
       await driver.sleep(twoMinus).then(async () => {
         await driver.quit();
         drivers.splice(drivers.indexOf(driver), 1);
