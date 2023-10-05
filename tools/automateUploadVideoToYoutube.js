@@ -576,7 +576,7 @@ const handMultiFetchYTB = async () => {
 };
 const scheduleRun = async () => {
   // console.log("CHECKED  CRON JOB RUN");
-  crontab.scheduleJob("*/45 * * * * *", async function () {
+  crontab.scheduleJob("*/40 * * * * *", async function () {
     console.log("====== CRON JOB RUN ======");
     const checkOpened = await checkBrowserIsOpened();
     if (!checkOpened) {
