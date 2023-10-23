@@ -155,17 +155,16 @@ const runTest = async (req, res, next) => {
                                 });
 
                               /// next button
-                              const button_next_path =
-                                "//material-button[@aria-label='Continue to the next step']//material-ripple[@class='_ngcontent-awn-CM_EDITING-13']";
+                              const button_next_path = ".btn-yes";
 
                               const conditions_03 = until.elementLocated({
-                                xpath: button_next_path,
+                                css: button_next_path,
                               });
                               await driver
                                 .wait(conditions_03, maxTime)
                                 .then(async () => {
                                   const button = await driver.findElement(
-                                    By.xpath(button_next_path)
+                                    By.css(button_next_path)
                                   );
                                   await driver
                                     .executeScript(
@@ -239,17 +238,19 @@ const handleStep2 = async (DATA, driver, userId, id) => {
                   });
                   await driver.wait(conditions_02, max_time).then(async () => {
                     const target_path =
-                      "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Target'])[1]";
+                      "(//material-button[@role='button'])[41]";
                     const excluded_path =
-                      "(//div[@class='content _ngcontent-awn-CM_EDITING-13'][normalize-space()='Exclude'])[1]";
+                      "(//material-button[@role='button'])[42]";
                     if (DATA.location_target[index] === "target") {
-                      const button = driver.findElement(By.xpath(target_path));
+                      const button = await driver.findElement(
+                        By.xpath(target_path)
+                      );
                       await driver.executeScript(
                         "arguments[0].click()",
                         button
                       );
                     } else {
-                      const button = driver.findElement(
+                      const button = await driver.findElement(
                         By.xpath(excluded_path)
                       );
                       await driver.executeScript(
