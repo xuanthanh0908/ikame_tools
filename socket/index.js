@@ -1,12 +1,10 @@
 let connectedSocket = {};
+
 async function socketHandler(connectingSockets) {
   return async (socket) => {
     // socket listener for auth
     socket.on("auth", async ({ id }) => {
-      console.log(
-        "=================USER CONNECTED===================",
-        socket.id
-      );
+      console.log("=================USER CONNECTED===================", id);
       connectedSocket[id] = socket.id;
     });
     /**
